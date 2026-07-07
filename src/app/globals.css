@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-g900: #061410;
+  --color-g800: #0A1F14;
+  --color-g700: #0F2D1C;
+  --color-g600: #1B5E3B;
+  --color-g500: #2E8B57;
+  --color-g400: #4CAF7D;
+  --color-g300: #7ECBA1;
+  --color-g100: #D6F0E2;
+  --color-g050: #F0FAF5;
+
+  --color-b900: #040D1F;
+  --color-b700: #0D2952;
+  --color-b500: #1565C0;
+  --color-b300: #42A5F5;
+  --color-b100: #BBDEFB;
+
+  --color-lime: #8AE63A;
+  --color-lime-dark: #6FCF1E;
+  --color-coral: #FF6B4A;
+
+  --color-off-white: #F7FAF8;
+
+  /* Text Colors */
+  --color-primary: #0A1A0E;
+  --color-secondary: #4A6355;
+  --color-muted: #8AA898;
+
+  /* Border Radii */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --radius-xl: 48px;
+  --radius-pill: 999px;
+
+  /* Fonts mapped to Next.js variables */
+  --font-display: var(--font-display), sans-serif;
+  --font-body: var(--font-body), sans-serif;
+  --font-accent: var(--font-accent), serif;
+
+  /* Custom Shadows */
+  --shadow-card: 0 4px 24px rgba(10, 31, 20, 0.08), 0 1px 4px rgba(10, 31, 20, 0.04);
+  --shadow-card-hover: 0 16px 48px rgba(10, 31, 20, 0.16), 0 4px 12px rgba(10, 31, 20, 0.08);
+  --shadow-glow: 0 0 40px rgba(46, 139, 87, 0.3);
+
+  /* Animations & Keyframes */
+  --animate-fadeUp: fadeUp 0.7s ease forwards;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-marquee: marquee 30s linear infinite;
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+/* Global Base Styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    /* background-color: var(--color-g800); */
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+.gradient{
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255) 100%);
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #e5e7eb;
+  border-radius: 20px;
+}
+.hover\:scrollbar-thumb-gray-300:hover::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+}
