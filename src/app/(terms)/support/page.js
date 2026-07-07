@@ -1,38 +1,4 @@
-"use client";
-
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-
 export default function SupportPage() {
-  const searchParams = useSearchParams();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
-  const [submitted, setSubmitted] = useState(false);
-
-  // Safely extract URL queries under the Next.js App Router
-  useEffect(() => {
-    const productName = searchParams.get('product') || '';
-    setFormData({
-      name: '',
-      email: '',
-      subject: productName ? `Inquiry about ${productName}` : '',
-      message: productName ? `I would like to get a quote for the ${productName}.` : ''
-    });
-  }, [searchParams]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-    setSubmitted(true);
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans w-full">

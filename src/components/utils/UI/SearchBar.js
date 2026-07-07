@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Icon } from './Icons/Icon';
 
-export const SearchBar = ({ className = '', onSearch }) => {
+// Rename the original component
+const SearchBarInner = ({ className = '', onSearch }) => {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -90,5 +91,20 @@ export const SearchBar = ({ className = '', onSearch }) => {
                 </button>
             )}
         </form>
+    );
+};
+
+// Export wrapped version with Suspense
+export const SearchBar = (props) => {
+    return (
+        <Suspense fallback={
+            <div className={`relative ${props.className || ''}`}>
+                <div className="block w-full pl-11 pr-10 py-2.5 bg-gray-50 border border-gray-200/80 rounded-full">
+                    {/* Skeleton loading state */}
+                </div>
+            </div>
+        }>
+            <SearchBarInner {...props} />
+        </Suspense>
     );
 };
