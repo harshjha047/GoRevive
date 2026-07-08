@@ -62,27 +62,51 @@ export default function CheckoutPage() {
     }, [isAuthenticated, authLoading, cartItems.length, cartLoading, router]);
 
     // Fetch Addresses
-    useEffect(() => {
-        if (isAuthenticated && user?.crm_party_code) {
-            const fetchAddresses = async () => {
-                try {
-                    const response = await api.get(`/user/addresses?userId=${user.crm_party_code}`);
-                    if (response.data.success) {
-                        setAddresses(response.data.addresses);
-                        // Auto-select first address if available
-                        if (response.data.addresses.length > 0) {
-                            setSelectedAddressId(response.data.addresses[0].addressid);
-                        }
-                    }
-                } catch (error) {
-                    toast.error("Failed to load saved addresses.");
-                } finally {
-                    setIsLoadingAddresses(false);
+useEffect(() => {
+    if (isAuthenticated && user?.crm_party_code) {
+        const fetchAddresses = async () => {
+            try {
+                const response = await api.get(`/user/addresses?userId=${user.crm_party_code}`);
+                let fetchedAddresses = [];
+
+                if (response.data.success) {
+                    fetchedAddresses = response.data.addresses;
                 }
-            };
-            fetchAddresses();
-        }
-    }, [isAuthenticated, user]);
+
+                // Merge the default address from the user profile if it exists
+                if (user.address1) {
+                    const defaultProfileAddress = {
+                        addressid: 'default-profile-address', // Unique ID for selection
+                        address_type: 'PROFILE DEFAULT',
+                        contact_name: user.cust_name,
+                        contact_no: user.mobile,
+                        plot_no: user.address1,
+                        locality: user.address2 || '',
+                        city: user.city,
+                        state: user.state,
+                        pincode: user.pincode,
+                        landmark: ''
+                    };
+                    
+                    // Add the default address to the beginning of the list
+                    fetchedAddresses = [defaultProfileAddress, ...fetchedAddresses];
+                }
+
+                setAddresses(fetchedAddresses);
+                
+                // Auto-select first address if available
+                if (fetchedAddresses.length > 0) {
+                    setSelectedAddressId(fetchedAddresses[0].addressid);
+                }
+            } catch (error) {
+                toast.error("Failed to load saved addresses.");
+            } finally {
+                setIsLoadingAddresses(false);
+            }
+        };
+        fetchAddresses();
+    }
+}, [isAuthenticated, user]);
 
     // ==========================================
     // PIPELINE HANDLERS
@@ -97,7 +121,6 @@ export default function CheckoutPage() {
         setIsVerifying(true);
         try {
             const response = await api.get(`/user/kyc?userId=${user.crm_party_code}`);
-            console.log(response)
             if (response.data?.success) {
                 const data = response.data.kycData;
                 setKycData(data);

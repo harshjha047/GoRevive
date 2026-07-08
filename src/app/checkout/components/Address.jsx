@@ -1,6 +1,7 @@
 import React from 'react'
 
 function Address({addresses, selectedAddressId, setSelectedAddressId, isLoadingAddresses, handleProceedToVerification }) {
+    console.log('Address component rendered with addresses:', addresses);
     return (
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-center mb-6">
