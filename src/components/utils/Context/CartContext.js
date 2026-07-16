@@ -105,12 +105,11 @@ export const CartProvider = ({ children }) => {
     }, [cartItems, isAuthenticated, user, fetchServerCart]);
 
     const addMultipleToCart = async (productsArray) => {
+        console.log(productsArray)
         if (!isAuthenticated || !user?.crm_party_code) return toast.error("Please log in.");
         
         const toastId = toast.loading(`Allocating ${productsArray.length} units...`);
         try {
-            // Promise.all handles the bulk requests efficiently. 
-            // *Optimization note: You can upgrade your BFF to accept an array later to make this 1 single network request.
             await Promise.all(productsArray.map(product => 
                 api.post('/cart', { unit: product, userId: user.crm_party_code })
             ));

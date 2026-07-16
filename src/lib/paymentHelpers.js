@@ -27,8 +27,6 @@ export async function createHdfcSession({ orderId, amount, customerId, phone, em
             payment_filter,
         };
 
-        console.log("HDFC REQUEST");
-        console.log(JSON.stringify(payload, null, 2));
 
         const response = await axios.post(`${process.env.HDFC_BASE_URL}/session`, payload, {
             headers: {
@@ -40,8 +38,6 @@ export async function createHdfcSession({ orderId, amount, customerId, phone, em
 
         const data = response.data;
 
-        console.log("HDFC RESPONSE");
-        console.log(JSON.stringify(data, null, 2));
 
         if (data.status !== "NEW") {
             throw new Error(data.message || "Failed to create HDFC session");
@@ -96,7 +92,6 @@ export async function verifyHdfcOrder(orderId) {
  */
 
 export async function createCashfreeOrder({ orderId, amount, customerId, phone, email, name, returnUrl, payment_methods_filters }) {
-    console.log(payment_methods_filters)
     try {
         const payload = {
             order_id: orderId,

@@ -1,14 +1,12 @@
 import axios from 'axios';
 
-// This instance talks to your Next.js backend
 const api = axios.create({
-    baseURL: '/api', // Points to your Next.js app/api folder
+    baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// You can easily add interceptors here later if needed
 api.interceptors.response.use(
     (response) => response,
     (error) => {

@@ -7,7 +7,6 @@ import { DashboardProvider } from "@/components/utils/Context/DashboardContext";
 import { Footer } from "@/components/utils/Footer/Footer";
 import { CartProvider } from "@/components/utils/Context/CartContext";
 
-// Replaced Syne with Plus Jakarta Sans for a sharp, trusted B2B corporate feel
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "600", "700", "800"],
@@ -20,7 +19,6 @@ const dmSans = DM_Sans({
   variable: "--font-body"
 });
 
-// Playfair Display is kept strictly for the italicized emphasis words (e.g., "A Second Life.")
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400"],
@@ -31,6 +29,10 @@ const playfair = Playfair_Display({
 export const metadata = {
   title: "GoRevive — Certified IT Asset Lifecycle Management",
   description: "India's #1 Certified IT Refurbisher. Secure data destruction, certified refurbishment, and maximum value recovery.",
+  icons: {
+    icon: "/favicon.ico", 
+    apple: "/favicon.ico", 
+  },
 };
 
 export default function RootLayout({ children }) {

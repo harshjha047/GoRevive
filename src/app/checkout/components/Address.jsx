@@ -6,7 +6,7 @@ function Address({addresses, selectedAddressId, setSelectedAddressId, isLoadingA
         <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-[#0B2136]">Select Shipping Address</h2>
-                <button className="text-sm font-bold text-[#1B5E3B] hover:underline">+ Add New</button>
+                {/* <button className="text-sm font-bold text-[#1B5E3B] hover:underline">+ Add New</button> */}
             </div>
 
             {isLoadingAddresses ? (

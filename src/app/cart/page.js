@@ -112,18 +112,14 @@ export default function CartPage() {
                 const response = await api.post('/products/details', { modelCode });
                 const allUnits = response.data?.units || [];
 
-                console.log(`📦 RAW UNITS FROM PHP for ${modelCode}:`, allUnits);
 
                 const cartIds = new Set(cartItems.map(i => i.product.id));
-                console.log(`🛒 IMEIs ALREADY IN CART:`, Array.from(cartIds));
 
                 const filteredUnits = allUnits.filter(u => !cartIds.has(u.id));
-                console.log(`✅ FINAL AVAILABLE UNITS:`, filteredUnits);
 
                 setAvailableWarehouseUnits(filteredUnits);
             } catch (error) {
                 toast.error("Failed to load warehouse units");
-                console.error("Modal Fetch Error:", error);
             }
         }
         setIsFetchingUnits(false);
