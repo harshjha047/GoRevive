@@ -14,26 +14,23 @@ function Payment({ onInitiatePayment, isInitiatingPayment }) {
 
                     Pay via Wallet
                 </button> */}
-                {/* UPI -> Routes to HDFC */}
                 <button
                     disabled={isInitiatingPayment}
-                    onClick={() => onInitiatePayment('HDFC', "upi")}
+                    onClick={() => onInitiatePayment('CASHFREE', "upi")}
                     className="border-2 border-gray-200 text-gray-700 font-bold py-4 rounded-xl hover:bg-gray-50 flex justify-center items-center disabled:opacity-50 transition-colors"
                 >
                     <img src="/UPI_logo.svg" className='h-5 mr-3' alt="UPI" />
                     Pay via UPI
                 </button>
 
-                {/* Net Banking -> Routes to HDFC */}
                 <button
                     disabled={isInitiatingPayment}
-                    onClick={() => onInitiatePayment('HDFC', "nb")}
+                    onClick={() => onInitiatePayment('CASHFREE', "nb")}
                     className="bg-green-600 text-white font-bold py-4 rounded-xl shadow-md hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
                     Net Banking
                 </button>
 
-                {/* Cards -> Routes to IDFC (Cashfree) */}
                 <button
                     disabled={isInitiatingPayment}
                     onClick={() => onInitiatePayment('CASHFREE', "cc,dc")}
