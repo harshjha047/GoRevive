@@ -7,16 +7,16 @@ function Payment({ onInitiatePayment, isInitiatingPayment }) {
             <h2 className="text-xl font-bold text-[#0B2136] mb-6">Select Payment Method</h2>
 
             <div className="flex flex-col gap-4 max-w-sm mx-auto">
-                {/* <button
+                <button
                     className="border-2 border-gray-200 text-gray-700 gap-2 font-bold py-4 rounded-xl hover:bg-gray-50 flex justify-center items-center disabled:opacity-50 transition-colors"
                 >
                     <WalletMinimal strokeWidth={1.25} />
 
                     Pay via Wallet
-                </button> */}
+                </button>
                 <button
                     disabled={isInitiatingPayment}
-                    onClick={() => onInitiatePayment('CASHFREE', "upi")}
+                    onClick={() => onInitiatePayment('CASHFREE', "")}
                     className="border-2 border-gray-200 text-gray-700 font-bold py-4 rounded-xl hover:bg-gray-50 flex justify-center items-center disabled:opacity-50 transition-colors"
                 >
                     <img src="/UPI_logo.svg" className='h-5 mr-3' alt="UPI" />
