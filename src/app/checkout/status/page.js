@@ -142,7 +142,7 @@ function StatusContent() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-                <Link href="/orders" className="flex-1 bg-[#1B5E3B] text-white font-bold px-6 py-4 rounded-xl hover:bg-[#14472d] transition-colors shadow-md text-center">
+                <Link href="/order" className="flex-1 bg-[#1B5E3B] text-white font-bold px-6 py-4 rounded-xl hover:bg-[#14472d] transition-colors shadow-md text-center">
                     View Order Details
                 </Link>
                 <Link href="/products" className="flex-1 bg-white border-2 border-gray-200 text-gray-700 font-bold px-6 py-4 rounded-xl hover:bg-gray-50 transition-colors text-center">

@@ -28,9 +28,6 @@ export default function CheckoutPage() {
     const { user, isAuthenticated, loading: authLoading } = useAuth();
     const { cartItems, cartSubtotal, loading: cartLoading, removeFromCart } = useCart();
 
-    console.log(user);
-
-
     const [currentStep, setCurrentStep] = useState(1);
 
     // Address State
@@ -41,15 +38,17 @@ export default function CheckoutPage() {
     // Verification State
     const [isVerifying, setIsVerifying] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
-
     const [kycData, setKycData] = useState(null);
     const [kycFiles, setKycFiles] = useState({ aadhaar: null, pan: null, gst: null });
     const [isUploadingKyc, setIsUploadingKyc] = useState(false);
 
+    // Payment & Inventory State
     const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
-
-    const [isCheckingInventory, setIsCheckingInventory] = useState(false);
     const [unavailableItems, setUnavailableItems] = useState([]);
+
+    // Wallet State
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [isWalletLoading, setIsWalletLoading] = useState(true);
 
     // ==========================================
     // INITIALIZATION & GUARDS
@@ -61,52 +60,83 @@ export default function CheckoutPage() {
         }
     }, [isAuthenticated, authLoading, cartItems.length, cartLoading, router]);
 
-    // Fetch Addresses
-useEffect(() => {
-    if (isAuthenticated && user?.crm_party_code) {
-        const fetchAddresses = async () => {
+  useEffect(() => {
+        const fetchWalletBalance = async () => {
+            if (!user?.crm_party_code) {
+                setIsWalletLoading(false);
+                return;
+            }
+
             try {
-                const response = await api.get(`/user/addresses?userId=${user.crm_party_code}`);
-                let fetchedAddresses = [];
-
-                if (response.data.success) {
-                    fetchedAddresses = response.data.addresses;
-                }
-
-                // Merge the default address from the user profile if it exists
-                if (user.address1) {
-                    const defaultProfileAddress = {
-                        addressid: 'default-profile-address', // Unique ID for selection
-                        address_type: 'PROFILE DEFAULT',
-                        contact_name: user.cust_name,
-                        contact_no: user.mobile,
-                        plot_no: user.address1,
-                        locality: user.address2 || '',
-                        city: user.city,
-                        state: user.state,
-                        pincode: user.pincode,
-                        landmark: ''
-                    };
-                    
-                    // Add the default address to the beginning of the list
-                    fetchedAddresses = [defaultProfileAddress, ...fetchedAddresses];
-                }
-
-                setAddresses(fetchedAddresses);
+                const response = await api.get(`/user/ledger?userId=${user.crm_party_code}`);
+                console.log(response)
                 
-                // Auto-select first address if available
-                if (fetchedAddresses.length > 0) {
-                    setSelectedAddressId(fetchedAddresses[0].addressid);
+                if (response.data && response.data.success) {
+                    setWalletBalance(response.data.kycData.balance || 0);
+                } else {
+                    setWalletBalance(0);
                 }
             } catch (error) {
-                toast.error("Failed to load saved addresses.");
+                console.error("Failed to fetch wallet balance:", error);
+                setWalletBalance(0);
             } finally {
-                setIsLoadingAddresses(false);
+                setIsWalletLoading(false);
             }
         };
-        fetchAddresses();
-    }
-}, [isAuthenticated, user]);
+
+        fetchWalletBalance();
+    }, [user]);
+
+    // 2. Fetch Addresses (Restored!)
+    useEffect(() => {
+        if (isAuthenticated && user?.crm_party_code) {
+            const fetchAddresses = async () => {
+                try {
+                    const response = await api.get(`/user/addresses?userId=${user.crm_party_code}`);
+                    let fetchedAddresses = [];
+
+                    if (response.data.success) {
+                        fetchedAddresses = response.data.addresses;
+                    }
+
+                    // Merge the default address from the user profile if it exists
+                    if (user.address1) {
+                        const defaultProfileAddress = {
+                            addressid: 'default-profile-address',
+                            address_type: 'PROFILE DEFAULT',
+                            contact_name: user.cust_name,
+                            contact_no: user.mobile,
+                            plot_no: user.address1,
+                            locality: user.address2 || '',
+                            city: user.city,
+                            state: user.state,
+                            pincode: user.pincode,
+                            landmark: ''
+                        };
+                        fetchedAddresses = [defaultProfileAddress, ...fetchedAddresses];
+                    }
+
+                    setAddresses(fetchedAddresses);
+                    
+                    if (fetchedAddresses.length > 0) {
+                        setSelectedAddressId(fetchedAddresses[0].addressid);
+                    }
+                } catch (error) {
+                    toast.error("Failed to load saved addresses.");
+                } finally {
+                    setIsLoadingAddresses(false);
+                }
+            };
+            fetchAddresses();
+        }
+    }, [isAuthenticated, user]);
+
+    // ==========================================
+    // CALCULATIONS
+    // ==========================================
+    const totalRequestAmount = cartItems.length >= 10 ? cartSubtotal * 0.97 : cartSubtotal;
+    const applicableWalletAmount = Math.min(walletBalance, totalRequestAmount);
+    const finalPayable = totalRequestAmount - applicableWalletAmount;
 
     // ==========================================
     // PIPELINE HANDLERS
@@ -142,20 +172,17 @@ useEffect(() => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Strict frontend enforcement matching the PHP error
         if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
             toast.error("Only JPG, JPEG, and PNG files are allowed.");
-            e.target.value = ''; // Reset the input
+            e.target.value = ''; 
             return;
         }
-
         setKycFiles(prev => ({ ...prev, [documentType]: file }));
     };
 
     const handleKycUpload = async (e) => {
         e.preventDefault();
 
-        // Only enforce upload if the PHP backend says it's missing
         if (!kycData?.aadhar_img && !kycFiles.aadhaar) return toast.error("Aadhaar image is required.");
         if (!kycData?.pan_img && !kycFiles.pan) return toast.error("PAN image is required.");
         if (!kycData?.gst_img && !kycFiles.gst) return toast.error("GST Certificate image is required.");
@@ -175,7 +202,6 @@ useEffect(() => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-
             if (response.data.success) {
                 toast.success("Documents verified successfully!", { id: toastId });
                 setIsVerified(true);
@@ -193,7 +219,6 @@ useEffect(() => {
     const handleProceedToSummary = () => {
         if (!isVerified) return toast.error("You must complete verification first.");
 
-
         const outOfStockIds = cartItems
             .filter(item => item.product.isStock !== "Available" || item.product.stock < item.quantity)
             .map(item => item.product.id);
@@ -205,8 +230,73 @@ useEffect(() => {
         } else {
             setCurrentStep(3);
         }
+    };
 
+    // Helper: Generate Invoice after successful payment (Cashfree or Wallet 100%)
+    const generateInvoiceAfterSuccess = async (orderId, formattedDate, paymentMode, selectedAddress, toastId) => {
+        try {
+            const invoicePayload = {
+                order_no: orderId,
+                invoice_no: "",
+                invoice_date: formattedDate.split(' ')[0],
+                tot_qty: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+                tot_discount_amt: 0,
+                tot_taxable_amt: totalRequestAmount,
+                tot_cgst_amt: 0,
+                tot_sgst_amt: 0,
+                tot_igst_amt: 0,
+                tot_amount: totalRequestAmount,
+                payment_mode: paymentMode,
+                wallet_amount: applicableWalletAmount,
+                cashfree_amount: finalPayable, // Will be 0 if paid fully by Wallet
+                extra_charges: "",
+                extra_per: 0,
+                extra_amt: 0,
+                crm_party_code: user.crm_party_code,
+                payment_reference: orderId,
+                payment_status: "Success",
+                company_gstno: "",
+                customer_gstno: "",
+                party_name: user.cust_name,
+                party_mobile: user.mobile,
+                party_email: user.email,
+                shipping_address: selectedAddress?.address1 || selectedAddress?.plot_no || "",
+                shipping_city: selectedAddress?.city || "",
+                shipping_state: selectedAddress?.state || "",
+                shipping_zip: selectedAddress?.pincode || "",
+                ship_from_state: "Delhi",
+                ship_from_addrs: "",
+                invoice_details: cartItems.map(item => ({
+                    model_name: item.product.name,
+                    model_code: item.product.model_code || "",
+                    type: item.product.category || "Unknown",
+                    hsn_code: item.product.hsn_code || "",
+                    qty: item.quantity.toString(),
+                    imei1: item.product.id,
+                    imei2: "",
+                    disccount: "0.00",
+                    item_category: item.product.condition || item.product.category || "D",
+                    purchase_price: item.product.price,
+                    taxable_value: item.product.price * item.quantity,
+                    cgst_per: "0.00",
+                    cgst_amount: "0.00",
+                    sgst_per: "0.00",
+                    sgst_amount: "0.00",
+                    igst_per: "0.00",
+                    igst_amount: "0.00",
+                    price: item.product.price.toString(),
+                    item_total: (item.product.price * item.quantity).toString()
+                }))
+            };
 
+            await api.post('/order/invoice', invoicePayload);
+            toast.success("Order Complete!", { id: toastId });
+            router.push(`/checkout/status?order_id=${orderId}&gateway=${paymentMode}`);
+
+        } catch (invoiceError) {
+            toast.error("Payment successful, but failed to generate invoice.", { id: toastId });
+            router.push(`/checkout/status?order_id=${orderId}&gateway=${paymentMode}`);
+        }
     };
 
     const handleInitiatePayment = async (gateway, option) => {
@@ -215,17 +305,13 @@ useEffect(() => {
 
         try {
             const orderId = `GR_${user.crm_party_code}_${Date.now()}`;
-
-            // Find the selected address object
             const selectedAddress = addresses.find(a => a.addressid === selectedAddressId);
 
-            // ==========================================
-            // STEP 1: CREATE PURCHASE ORDER (PO)
-            // ==========================================
             const pad = (n) => n.toString().padStart(2, '0');
             const d = new Date();
             const formattedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 
+            // STEP 1: PO PAYLOAD 
             const poPayload = {
                 order_details: cartItems.map(item => ({
                     sku_id: item.product.model_code || "",
@@ -239,14 +325,14 @@ useEffect(() => {
                 order_date: formattedDate,
                 tot_qnty: cartItems.reduce((acc, item) => acc + item.quantity, 0),
                 tot_amount: totalRequestAmount,
-                payment_mode: gateway, // HDFC or CASHFREE
+                payment_mode: gateway,
                 cod_charges: "",
                 payment_remark: "B2B Website Order",
                 crm_party_code: user?.crm_party_code || "",
                 party_name: user?.cust_name || "User",
                 party_mobile: user?.mobile || "",
                 party_email: user?.email || "",
-                shipping_address: selectedAddress?.address1 || "",
+                shipping_address: selectedAddress?.address1 || selectedAddress?.plot_no || "",
                 shipping_city: selectedAddress?.city || "",
                 shipping_state: selectedAddress?.state || "",
                 shipping_zip: selectedAddress?.pincode || ""
@@ -260,14 +346,19 @@ useEffect(() => {
                 return;
             }
 
-            // ==========================================
+            // AUTO-SKIP GATEWAY IF WALLET COVERS 100%
+            if (finalPayable === 0) {
+                toast.loading("Wallet covers full amount. Generating Invoice...", { id: toastId });
+                await generateInvoiceAfterSuccess(orderId, formattedDate, "Wallet", selectedAddress, toastId);
+                return;
+            }
+
             // STEP 2: INITIATE PAYMENT GATEWAY
-            // ==========================================
             toast.loading(`Connecting to ${gateway}...`, { id: toastId });
 
             const paymentPayload = {
                 orderId,
-                amount: totalRequestAmount,
+                amount: finalPayable, // CRITICAL FIX: Only charge what is left after wallet!
                 customerId: user.crm_party_code,
                 customerPhone: user.mobile,
                 customerEmail: user.email,
@@ -280,7 +371,7 @@ useEffect(() => {
                     options: [{ paymentMethodType: option, enable: true }]
                 };
             } else if (gateway === 'CASHFREE' && option) {
-                    paymentPayload.payment_methods_filters = option;
+                paymentPayload.payment_methods_filters = option;
             }
 
             const response = await api.post('/payment/create', paymentPayload);
@@ -291,15 +382,20 @@ useEffect(() => {
                 return;
             }
 
-            // ==========================================
+            // Save the payment split so the status page knows how to build the invoice for HDFC
+            sessionStorage.setItem('pending_order_split', JSON.stringify({
+                wallet_amount: applicableWalletAmount,
+                gateway_amount: finalPayable,
+                total_amount: totalRequestAmount
+            }));
+
             // STEP 3: REDIRECT (HDFC) OR MODAL (CASHFREE)
-            // ==========================================
             if (gateway === 'HDFC') {
                 toast.success("Redirecting to Secure Gateway...", { id: toastId });
                 window.location.href = response.data.paymentUrl;
 
             } else if (gateway === 'CASHFREE') {
-                const cashfree = await load({ mode: "sandbox" }); 
+                const cashfree = await load({ mode: "sandbox" });
                 toast.dismiss(toastId);
 
                 const result = await cashfree.checkout({
@@ -311,77 +407,8 @@ useEffect(() => {
                     toast.error("Payment failed: " + result.error.message);
                     setIsInitiatingPayment(false);
                 } else if (result.paymentDetails) {
-
-                    // ==========================================
-                    // STEP 3 (CASHFREE ONLY): CREATE INVOICE
-                    // ==========================================
                     toast.loading("Payment verified! Generating Invoice...", { id: toastId });
-
-                    try {
-                        const invoicePayload = {
-                            order_no: orderId,
-                            invoice_no: "",
-                            invoice_date: formattedDate.split(' ')[0],
-                            tot_qty: cartItems.reduce((acc, item) => acc + item.quantity, 0),
-                            tot_discount_amt: 0,
-                            tot_taxable_amt: totalRequestAmount,
-                            tot_cgst_amt: 0,
-                            tot_sgst_amt: 0,
-                            tot_igst_amt: 0,
-                            tot_amount: totalRequestAmount,
-                            payment_mode: "Cashfree",
-                            wallet_amount: 0,
-                            cashfree_amount: totalRequestAmount,
-                            extra_charges: "",
-                            extra_per: 0,
-                            extra_amt: 0,
-                            crm_party_code: user.crm_party_code,
-                            payment_reference: orderId,
-                            payment_status: "Success",
-                            company_gstno: "",
-                            customer_gstno: "",
-                            party_name: user.cust_name,
-                            party_mobile: user.mobile,
-                            party_email: user.email,
-                            shipping_address: selectedAddress?.address1 || "",
-                            shipping_city: selectedAddress?.city || "",
-                            shipping_state: selectedAddress?.state || "",
-                            shipping_zip: selectedAddress?.pincode || "",
-                            ship_from_state: "Delhi",
-                            ship_from_addrs: "",
-                            invoice_details: cartItems.map(item => ({
-                                model_name: item.product.name,
-                                model_code: item.product.model_code || "",
-                                type: item.product.category || "Unknown",
-                                hsn_code: item.product.hsn_code || "",
-                                qty: item.quantity.toString(),
-                                imei1: item.product.id,
-                                imei2: "",
-                                disccount: "0.00",
-                                item_category: item.product.condition || item.product.category || "D",
-                                purchase_price: item.product.price,
-                                taxable_value: item.product.price * item.quantity,
-                                cgst_per: "0.00",
-                                cgst_amount: "0.00",
-                                sgst_per: "0.00",
-                                sgst_amount: "0.00",
-                                igst_per: "0.00",
-                                igst_amount: "0.00",
-                                price: item.product.price.toString(),
-                                item_total: (item.product.price * item.quantity).toString()
-                            }))
-                        };
-
-                        await api.post('/order/invoice', invoicePayload);
-                        toast.success("Order Complete!", { id: toastId });
-
-                        // Redirect to success page manually since modal didn't redirect
-                        router.push(`/checkout/status?order_id=${orderId}&gateway=CASHFREE`);
-
-                    } catch (invoiceError) {
-                        toast.error("Payment successful, but failed to generate invoice.", { id: toastId });
-                        router.push(`/checkout/status?order_id=${orderId}&gateway=CASHFREE`);
-                    }
+                    await generateInvoiceAfterSuccess(orderId, formattedDate, "Cashfree", selectedAddress, toastId);
                 }
             }
         } catch (error) {
@@ -390,38 +417,9 @@ useEffect(() => {
         }
     };
 
-    const handleProceedToPayment = async () => {
-        // setIsInitiatingPayment(true);
-        // const toastId = toast.loading("Securely connecting to HDFC SmartGateway...");
-
+    const handleProceedToPayment = () => {
         setCurrentStep(4);
-        // try {
-        //     const orderId = `GR_${user.crm_party_code}_${Date.now()}`;
-
-        //     const response = await api.post('/payment/create', {
-        //         orderId: orderId,
-        //         amount: totalRequestAmount,
-        //         customerId: user.crm_party_code,
-        //         customerPhone: user.mobile,
-        //         customerEmail: user.email
-        //     });
-
-        //     if (response.data.success && response.data.paymentLinks?.web) {
-        //         toast.success("Redirecting to payment gateway...", { id: toastId });
-
-        //         window.location.href = response.data.paymentLinks.web;
-        //     } else {
-        //         toast.error("Failed to initialize payment gateway.", { id: toastId });
-        //         setIsInitiatingPayment(false);
-        //     }
-        // } catch (error) {
-        //     toast.error("Network error while connecting to bank.", { id: toastId });
-        //     setIsInitiatingPayment(false);
-        // }
     };
-
-
-
 
     // ==========================================
     // RENDER HELPERS
@@ -430,15 +428,12 @@ useEffect(() => {
         return <div className="min-h-screen bg-[#F8FAFC] flex justify-center py-20"><div className="w-10 h-10 border-4 border-[#1B5E3B]/20 border-t-[#1B5E3B] rounded-full animate-spin"></div></div>;
     }
 
-    const totalRequestAmount = cartItems.length >= 10 ? cartSubtotal * 0.97 : cartSubtotal;
-
     return (
         <div className="min-h-screen bg-[#F8FAFC] pb-24 py-12">
             <div className="container mx-auto px-4 max-w-[1000px]">
 
                 {/* Stepper Header */}
                 <StepperHeader currentStep={currentStep} STEPS={STEPS} />
-
 
                 <div className="flex flex-col lg:flex-row gap-8 mt-16">
                     {/* LEFT COLUMN: Main Steps */}
@@ -494,10 +489,13 @@ useEffect(() => {
                         cartItems={cartItems}
                         cartSubtotal={cartSubtotal}
                         totalRequestAmount={totalRequestAmount}
+                        walletBalance={walletBalance}
+                        applicableWalletAmount={applicableWalletAmount}
+                        finalPayable={finalPayable}
+                        isWalletLoading={isWalletLoading}
                         formatCurrency={formatCurrency}
                     />
                 </div>
-
             </div>
         </div>
     );

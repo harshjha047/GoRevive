@@ -15,6 +15,12 @@ export async function POST(request) {
             verificationResult = await verifyCashfreeOrder(orderId);
         } else if (gateway === 'HDFC') {
             verificationResult = await verifyHdfcOrder(orderId);
+        } else if (gateway === 'Wallet' || gateway === 'WALLET') {
+            verificationResult = {
+                isPaid: true,
+                status: "PAID_VIA_WALLET",
+                fullData: { payment_method: "Wallet", order_id: orderId }
+            };
         } else {
             return NextResponse.json({ success: false, message: "Invalid gateway" }, { status: 400 });
         }
