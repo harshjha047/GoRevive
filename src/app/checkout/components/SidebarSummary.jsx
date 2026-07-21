@@ -38,7 +38,7 @@ function SidebarSummary({
 
                     {/* NEW: Display Wallet Deduction */}
                     {!isWalletLoading && walletBalance > 0 && (
-                        <div className="flex justify-between text-sm text-blue-600 bg-blue-50 p-2 rounded-lg -mx-2 px-2">
+                        <div className="flex justify-between text-sm text-blue-600 p-2 rounded-lg -mx-2 px-2">
                             <span className="font-bold">Wallet Applied</span>
                             <span className="font-bold">- {formatCurrency(applicableWalletAmount)}</span>
                         </div>
