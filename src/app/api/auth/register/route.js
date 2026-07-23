@@ -10,7 +10,7 @@ export async function POST(request) {
             customer_group_id: "Retailer",
             client_id: "1",
             createdBy: "website",
-            token: process.env.PHP_STATIC_TOKEN // Injected securely!
+            token: process.env.PHP_STATIC_TOKEN 
         });
 
         return NextResponse.json(phpResponse.data, { status: phpResponse.status });
