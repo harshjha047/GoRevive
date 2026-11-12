@@ -11,7 +11,7 @@ export default function robots() {
             {
                 userAgent: '*',
                 allow: '/',
-                disallow: ['/api/', '/cart', '/checkout', '/dashboard', '/order', '/login', '/logout', '/qc/'],
+                disallow: ['/api/', '/cart', '/checkout', '/dashboard', '/order', '/login', '/logout', '/qc/', '/hr'],
             },
         ],
         sitemap: `${SITE_URL}/sitemap.xml`,

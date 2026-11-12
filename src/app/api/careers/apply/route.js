@@ -6,6 +6,7 @@ import { isMongoConfigured } from '@/lib/server/mongo';
 import { createApplication, hasApplied, markNotified, DuplicateApplicationError } from '@/lib/server/careers';
 import { verifyResume, fetchResume, resumeDownloadUrl, markResumeSubmitted, deleteResume, ResumeRejectedError } from '@/lib/server/cloudinary';
 import { decryptToken } from '@/lib/server/session';
+import { verifyGoogleCredential } from '@/lib/server/google';
 import { sendApplicationEmails } from '@/lib/server/email';
 
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,8 @@ async function resumeFromTicket(ticket, jobSlug) {
 }
 
 // Expects JSON: { jobSlug, name, email, phone, link, note, consent, resumeTicket,
-// resumeName, company_website, utm_source, utm_medium, utm_campaign, referrer }.
+// resumeName, googleCredential, autofilled, company_website, utm_source,
+// utm_medium, utm_campaign, referrer }.
 // The resume itself was already uploaded to Cloudinary by the browser.
 export async function POST(request) {
     const ip = await clientIp();
@@ -83,6 +85,15 @@ export async function POST(request) {
 
     const emailLower = input.email.toLowerCase();
 
+    // "Continue with Google": the email counts as verified only if it is the
+    // Google account's verified address. An expired or invalid token just
+    // means unverified; it never blocks the application.
+    const google = await verifyGoogleCredential(body.googleCredential);
+    const emailVerified = Boolean(google && google.email === emailLower);
+    const autofilled = Array.isArray(body.autofilled)
+        ? [...new Set(body.autofilled.map(String))].filter((k) => ['name', 'email', 'phone', 'link'].includes(k))
+        : [];
+
     let saved;
     let resume = null;
     try {
@@ -103,7 +114,10 @@ export async function POST(request) {
             link: normalizeLink(input.link),
             note: input.note,
             resume, // { publicId, bytes, pages, uploadedAt, filename } | null
-            intakeMethod: resume ? 'resume' : 'manual',
+            intakeMethod: emailVerified ? 'google' : autofilled.length ? 'resume_autofill' : resume ? 'resume' : 'manual',
+            emailVerified,
+            googleSub: emailVerified ? google.sub : null,
+            autofilled,
             source: {
                 utmSource: clip(body.utm_source, 80),
                 utmMedium: clip(body.utm_medium, 80),
