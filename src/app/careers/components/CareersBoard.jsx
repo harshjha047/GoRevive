@@ -81,34 +81,36 @@ export default function CareersBoard({ jobs, reviewPromise, inbox }) {
 
     return (
         <>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Filter roles by department">
-                {departments.map((d) => {
-                    const active = d === dept;
-                    const count = d === ALL ? jobs.length : jobs.filter((j) => j.department === d).length;
-                    return (
-                        <button
-                            key={d}
-                            type="button"
-                            onClick={() => setDept(d)}
-                            aria-pressed={active}
-                            className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
-                                active ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700'
-                            }`}
-                        >
-                            {d} <span className={active ? 'text-blue-100' : 'text-slate-400'}>{count}</span>
-                        </button>
-                    );
-                })}
-            </div>
+            {departments.length > 2 && (
+                <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter roles by department">
+                    {departments.map((d) => {
+                        const active = d === dept;
+                        const count = d === ALL ? jobs.length : jobs.filter((j) => j.department === d).length;
+                        return (
+                            <button
+                                key={d}
+                                type="button"
+                                onClick={() => setDept(d)}
+                                aria-pressed={active}
+                                className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
+                                    active ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700'
+                                }`}
+                            >
+                                {d} <span className={active ? 'text-blue-100' : 'text-slate-400'}>{count}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {visible.length ? (
-                <ul className="mt-6 grid gap-4 md:grid-cols-2" aria-live="polite">
+                <ul className="grid gap-4 md:grid-cols-2" aria-live="polite">
                     {visible.map((job) => (
                         <JobCard key={job.slug} job={job} applied={applied.includes(job.slug)} onOpen={open} />
                     ))}
                 </ul>
             ) : (
-                <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
                     <p className="font-semibold text-slate-900">No open roles right now</p>
                     <p className="mt-1 text-sm text-slate-600">
                         We still like hearing from good people. Email your resume to{' '}

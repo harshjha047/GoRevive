@@ -7,9 +7,9 @@ through Resend.
 
 ## Go-live checklist
 
-1. **Replace the sample roles** in `src/lib/careers/jobs.js` with real openings
-   (titles, details, salaries, dates). Also check `REVIEW_PROMISE` (the timeline
-   promised to candidates) and `CAREERS_EMAIL`.
+1. **Roles** live in `src/lib/careers/jobs.js` (currently: Digital Marketing
+   Manager). Add `salary` once it's confirmed, and check `validThrough`,
+   `REVIEW_PROMISE` (the timeline promised to candidates) and `CAREERS_EMAIL`.
 2. **MongoDB Atlas**
    - Create a database user with read/write on the `gorevive` database.
    - Network Access: allow your server's IP. On Vercel, either allow

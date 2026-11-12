@@ -5,7 +5,7 @@ import CareersBoard from './components/CareersBoard';
 
 export const metadata = pageMetadata({
     title: 'Careers – Jobs at GoRevive, New Delhi',
-    description: 'Join GoRevive and help give IT hardware a second life. Open roles in operations, sales and technology in New Delhi. Apply in under a minute.',
+    description: 'Join GoRevive and help give IT hardware a second life. See open roles at our New Delhi office and apply in under a minute.',
     path: '/careers',
 });
 

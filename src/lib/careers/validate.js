@@ -64,6 +64,14 @@ export const validators = {
     },
 };
 
+/** Like validators[key], plus per-role rules (e.g. a required note). */
+export function validateField(key, value, job) {
+    if (key === 'note' && job?.noteRequired && String(value || '').trim().length < 20) {
+        return 'Please add a few lines here — it helps us a lot.';
+    }
+    return validators[key](value);
+}
+
 /** Adds https:// to "linkedin.com/in/x" so it is stored as a usable URL. */
 export const normalizeLink = (v) => {
     const s = String(v || '').trim();

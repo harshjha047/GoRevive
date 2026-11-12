@@ -1,25 +1,25 @@
 // Open roles shown on /careers. Edit this file to add, change or close a role:
 // set `active: false` (or let `validThrough` pass) to take it down.
 //
-// THE ROLES BELOW ARE SAMPLES. Replace the titles, details and salaries with
-// your real openings before going live.
-//
 // Fields:
-//   slug          URL of the role: /careers/<slug>. Never reuse a slug.
-//   department    Used for the filter pills.
-//   workMode      'On-site' | 'Hybrid' | 'Remote'
+//   slug            URL of the role: /careers/<slug>. Never reuse a slug.
+//   department      Used for the filter pills (hidden while there's only one).
+//   workMode        'On-site' | 'Hybrid' | 'Remote'
+//   experience      Shown on the card. experienceMonths is the minimum, for Google.
 //   employmentType  schema.org value: FULL_TIME, PART_TIME, CONTRACTOR, INTERN
-//   salary        Optional. { min, max, unit: 'MONTH' | 'YEAR' } in INR. Shown
-//                 on the page and sent to Google for Jobs.
+//   responsibilities / skills / requirements / goodToHave / perks  bullet lists
+//                   (requirements and goodToHave are optional)
+//   salary          Optional. { min, max, unit: 'MONTH' | 'YEAR' } in INR. Shown
+//                   on the page and sent to Google for Jobs. Leave out until confirmed.
+//   notePrompt      Optional label for the form's note field; noteRequired makes it mandatory.
 //   postedAt / validThrough  ISO dates (YYYY-MM-DD).
 
-import { CONTACT } from '@/lib/site';
-
-// Public address for general applications (shown when no role fits). Change it
-// to a careers@ mailbox once one exists.
-export const CAREERS_EMAIL = CONTACT.email;
+// Public address for general applications (shown when no role is open).
+// The current JD asks candidates to write to info@gorevive.in.
+export const CAREERS_EMAIL = 'info@gorevive.in';
 
 export const CAREERS_OFFICE = {
+    street: 'Second Floor, D-161, Okhla Phase I, Okhla Industrial Estate',
     locality: 'New Delhi',
     region: 'Delhi',
     postalCode: '110020',
@@ -32,90 +32,51 @@ export const REVIEW_PROMISE = 'Our hiring team reviews every application. If you
 
 export const JOBS = [
     {
-        slug: 'qc-technician-laptops',
-        title: 'QC Technician – Laptops & Desktops',
-        department: 'Operations',
+        slug: 'digital-marketing-manager',
+        title: 'Digital Marketing Manager',
+        department: 'Marketing',
         workMode: 'On-site',
-        location: 'New Delhi',
-        experience: '1–3 years',
+        location: 'Okhla, New Delhi',
+        experience: '3+ years',
+        experienceMonths: 36,
         employmentType: 'FULL_TIME',
-        summary: 'Test, grade and certify pre-owned laptops and desktops before they reach our customers.',
+        summary: 'Own GoRevive’s digital presence end to end: build the B2B demand engine across search, LinkedIn and content to bring in enterprise leads for our ITAD and buyback services, and grow sales of certified pre-owned devices online. You’ll turn compliance-heavy, technical services into clear, trustworthy marketing for IT heads, procurement, CFOs and ESG leads.',
         responsibilities: [
-            'Run hardware diagnostics on incoming laptops and desktops',
-            'Grade cosmetic and functional condition against the GoRevive grading parameters',
-            'Replace common parts (RAM, SSD, batteries, keyboards) and re-test',
-            'Record results against each serial number in our QC system',
+            'Build and run a quarterly digital marketing plan and budget aligned with sales targets',
+            'Run and optimise Google Ads (Search, Performance Max, Shopping), LinkedIn Ads and, where they pay back, Meta campaigns',
+            'Build landing pages, lead forms and nurture flows, and hand qualified leads to sales quickly',
+            'Own on-page, technical and local SEO for gorevive.in and rank for terms like “ITAD services India” and “pre-owned laptops bulk”',
+            'Produce blogs, case studies, whitepapers and ESG/carbon-savings content from our CPCB/DPCC and NIST 800-88 credentials',
+            'Grow LinkedIn as our main B2B channel, plus Instagram and Facebook, with short videos of our facility and process',
+            'Run email campaigns, keep CRM data clean, and report weekly on spend, CPL, MQLs, SQLs, pipeline and ROAS',
+            'Manage freelancers and agencies for design, video and content',
         ],
-        skills: ['Laptop/desktop hardware', 'Windows & macOS installs', 'Diagnostic tools', 'Attention to detail'],
-        perks: ['Health insurance', 'Paid leave', 'Training on enterprise hardware'],
-        salary: { min: 18000, max: 28000, unit: 'MONTH' },
-        postedAt: '2026-11-01',
-        validThrough: '2027-01-31',
-        active: true,
-    },
-    {
-        slug: 'b2b-sales-executive',
-        title: 'B2B Sales Executive',
-        department: 'Sales',
-        workMode: 'Hybrid',
-        location: 'New Delhi',
-        experience: '2–5 years',
-        employmentType: 'FULL_TIME',
-        summary: 'Sell certified pre-owned IT hardware to retailers, resellers and corporate buyers.',
-        responsibilities: [
-            'Build and manage a pipeline of retailer and corporate accounts',
-            'Prepare quotes for bulk laptop and desktop orders',
-            'Work with operations to meet delivery timelines',
-            'Hit monthly revenue targets',
+        skills: ['Google Ads', 'LinkedIn Ads', 'SEO', 'GA4', 'Search Console', 'Tag Manager', 'HubSpot / Zoho CRM', 'Canva'],
+        requirements: [
+            '3+ years of hands-on digital marketing experience',
+            'Hands-on experience running Google Ads and LinkedIn Ads campaigns',
+            'Proven SEO results: rankings and organic traffic you can show',
+            'Strong working knowledge of GA4, Search Console, Tag Manager and a CRM (HubSpot, Zoho or similar)',
+            'Clear, persuasive English writing; able to simplify technical topics',
+            'Data-driven: you set targets, measure them and report honestly',
+            'Graduate in any discipline; your skills and results matter more than your degree',
         ],
-        skills: ['B2B / channel sales', 'IT hardware knowledge', 'Negotiation', 'CRM & Excel'],
-        perks: ['Incentives on every deal', 'Health insurance', 'Travel allowance'],
-        salary: { min: 300000, max: 600000, unit: 'YEAR' },
-        postedAt: '2026-11-01',
-        validThrough: '2027-01-31',
-        active: true,
-    },
-    {
-        slug: 'itad-operations-executive',
-        title: 'ITAD Operations Executive',
-        department: 'Operations',
-        workMode: 'On-site',
-        location: 'New Delhi',
-        experience: '1–4 years',
-        employmentType: 'FULL_TIME',
-        summary: 'Coordinate IT asset pickups, data erasure and recycling for corporate clients.',
-        responsibilities: [
-            'Schedule asset pickups and track inbound lots',
-            'Make sure every device goes through certified data erasure',
-            'Prepare disposal and erasure certificates for clients',
-            'Keep e-waste records compliant with CPCB requirements',
+        goodToHave: [
+            'Marketing IT hardware, pre-owned electronics, e-waste, SaaS or enterprise B2B services',
+            'Familiarity with India’s E-Waste (Management) Rules, EPR or corporate ESG reporting',
+            'Account-based marketing (ABM) for enterprise accounts',
+            'E-commerce marketing: Google Merchant Center, Shopping feeds, marketplaces',
+            'Basic video editing, short-form video and AI tools for content and campaigns',
         ],
-        skills: ['Logistics coordination', 'Documentation', 'Excel', 'Client communication'],
-        perks: ['Health insurance', 'Paid leave'],
-        postedAt: '2026-11-01',
-        validThrough: '2027-01-31',
-        active: true,
-    },
-    {
-        slug: 'full-stack-developer',
-        title: 'Full-Stack Developer (Next.js)',
-        department: 'Technology',
-        workMode: 'Hybrid',
-        location: 'New Delhi',
-        experience: '2–4 years',
-        employmentType: 'FULL_TIME',
-        summary: 'Build the GoRevive storefront, checkout and internal tools.',
-        responsibilities: [
-            'Ship features across the Next.js storefront and its APIs',
-            'Integrate payments, inventory and order systems',
-            'Keep pages fast and search-friendly',
-            'Own features from idea to production',
+        perks: [
+            'Ownership of the full digital function, with a real say in budget and strategy',
+            'Work that cuts e-waste and carbon emissions for hundreds of companies',
+            'Competitive salary and performance-linked incentives',
         ],
-        skills: ['React / Next.js', 'Node.js', 'REST APIs', 'MongoDB or SQL'],
-        perks: ['Health insurance', 'Hybrid work', 'Latest hardware'],
-        salary: { min: 600000, max: 1200000, unit: 'YEAR' },
-        postedAt: '2026-11-01',
-        validThrough: '2027-01-31',
+        notePrompt: 'Tell us about a campaign you’re proud of (with numbers)',
+        noteRequired: true,
+        postedAt: '2026-11-12',
+        validThrough: '2027-02-12',
         active: true,
     },
 ];

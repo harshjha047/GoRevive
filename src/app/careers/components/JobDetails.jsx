@@ -1,4 +1,4 @@
-import { Briefcase, Clock, Gift, IndianRupee, MapPin, Wrench } from 'lucide-react';
+import { Briefcase, CheckCircle2, Clock, Gift, IndianRupee, MapPin, Sparkles, Wrench } from 'lucide-react';
 import { formatSalary } from '@/lib/careers/jobs';
 
 export function JobMeta({ job, className = '' }) {
@@ -52,7 +52,23 @@ export default function JobDetails({ job }) {
                 </ul>
             </Section>
 
-            <Section icon={Gift} title="Pay & perks">
+            {job.requirements?.length > 0 && (
+                <Section icon={CheckCircle2} title="What we’re looking for">
+                    <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-700 marker:text-slate-400">
+                        {job.requirements.map((r) => <li key={r}>{r}</li>)}
+                    </ul>
+                </Section>
+            )}
+
+            {job.goodToHave?.length > 0 && (
+                <Section icon={Sparkles} title="Good to have">
+                    <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-700 marker:text-slate-400">
+                        {job.goodToHave.map((r) => <li key={r}>{r}</li>)}
+                    </ul>
+                </Section>
+            )}
+
+            <Section icon={Gift} title={salary ? 'Pay & perks' : 'What we offer'}>
                 {salary && (
                     <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
                         <IndianRupee className="h-4 w-4 text-emerald-600" aria-hidden="true" />

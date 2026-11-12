@@ -34,7 +34,7 @@ function jobPostingSchema(job) {
         '@context': 'https://schema.org',
         '@type': 'JobPosting',
         title: job.title,
-        description: `<p>${job.summary}</p><p><strong>What you'll do</strong></p>${list(job.responsibilities)}<p><strong>Skills</strong></p>${list(job.skills)}<p><strong>Perks</strong></p>${list(job.perks)}`,
+        description: `<p>${job.summary}</p><p><strong>What you'll do</strong></p>${list(job.responsibilities)}<p><strong>Skills</strong></p>${list(job.skills)}${job.requirements?.length ? `<p><strong>Requirements</strong></p>${list(job.requirements)}` : ''}${job.goodToHave?.length ? `<p><strong>Good to have</strong></p>${list(job.goodToHave)}` : ''}<p><strong>What we offer</strong></p>${list(job.perks)}`,
         identifier: { '@type': 'PropertyValue', name: SITE_NAME, value: job.slug },
         datePosted: job.postedAt,
         validThrough: job.validThrough ? `${job.validThrough}T23:59:59+05:30` : undefined,
@@ -44,6 +44,7 @@ function jobPostingSchema(job) {
             '@type': 'Place',
             address: {
                 '@type': 'PostalAddress',
+                streetAddress: CAREERS_OFFICE.street,
                 addressLocality: CAREERS_OFFICE.locality,
                 addressRegion: CAREERS_OFFICE.region,
                 postalCode: CAREERS_OFFICE.postalCode,
@@ -53,6 +54,9 @@ function jobPostingSchema(job) {
         directApply: true,
         url: `${SITE_URL}/careers/${job.slug}`,
     };
+    if (job.experienceMonths) {
+        schema.experienceRequirements = { '@type': 'OccupationalExperienceRequirements', monthsOfExperience: job.experienceMonths };
+    }
     if (job.workMode === 'Remote') {
         schema.jobLocationType = 'TELECOMMUTE';
         schema.applicantLocationRequirements = { '@type': 'Country', name: 'India' };

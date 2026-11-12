@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getJob, isOpen, REVIEW_PROMISE } from '@/lib/careers/jobs';
-import { validators, normalizePhone, normalizeLink } from '@/lib/careers/validate';
+import { validateField, normalizePhone, normalizeLink } from '@/lib/careers/validate';
 import { rateLimit, clientIp } from '@/lib/server/rateLimit';
 import { isMongoConfigured } from '@/lib/server/mongo';
 import { createApplication, hasApplied, markNotified, DuplicateApplicationError } from '@/lib/server/careers';
@@ -72,7 +72,7 @@ export async function POST(request) {
     };
     const errors = {};
     for (const key of Object.keys(input)) {
-        const message = validators[key](input[key]);
+        const message = validateField(key, input[key], job);
         if (message) errors[key] = message;
     }
 

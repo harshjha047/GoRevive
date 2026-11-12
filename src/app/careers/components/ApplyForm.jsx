@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, FileText, Loader2, UploadCloud, X } from 'lucide-react';
-import { validators, LIMITS, RESUME_ACCEPT } from '@/lib/careers/validate';
+import { validators, validateField, LIMITS, RESUME_ACCEPT } from '@/lib/careers/validate';
 import { loadDraft, saveDraft, clearDraft, markApplied, readUtm, captureUtm, useAppliedSlugs } from '@/lib/careers/careersStore';
 
 const EMPTY_VALUES = { name: '', email: '', phone: '', link: '', note: '' };
@@ -61,9 +61,9 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     const setValue = (key) => (e) => {
         const v = e.target.value;
         setValues((prev) => ({ ...prev, [key]: v }));
-        if (errors[key]) setErrors((prev) => ({ ...prev, [key]: validators[key](v) }));
+        if (errors[key]) setErrors((prev) => ({ ...prev, [key]: validateField(key, v, job) }));
     };
-    const validateOnBlur = (key) => () => setErrors((prev) => ({ ...prev, [key]: validators[key](values[key]) }));
+    const validateOnBlur = (key) => () => setErrors((prev) => ({ ...prev, [key]: validateField(key, values[key], job) }));
 
     const pickFile = (file) => {
         if (!file) return;
@@ -125,7 +125,7 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     async function submit(e) {
         e.preventDefault();
         setFormError('');
-        const errs = Object.fromEntries(Object.keys(EMPTY_VALUES).map((k) => [k, validators[k](values[k])]));
+        const errs = Object.fromEntries(Object.keys(EMPTY_VALUES).map((k) => [k, validateField(k, values[k], job)]));
         errs.resume = resume ? validators.resume(resume) : '';
         setErrors(errs);
         if (Object.values(errs).some(Boolean)) return focusFirstError(errs);
@@ -258,8 +258,8 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
                     onChange={(e) => pickFile(e.target.files?.[0])} aria-describedby={describedBy('resume')} />
             </Field>
 
-            <Field id="note" label="Anything you want us to know?" optional error={errors.note}>
-                <textarea id="note" name="note" rows={3} value={values.note} onChange={setValue('note')} onBlur={validateOnBlur('note')}
+            <Field id="note" label={job.notePrompt || 'Anything you want us to know?'} optional={!job.noteRequired} error={errors.note}>
+                <textarea id="note" name="note" rows={job.noteRequired ? 4 : 3} value={values.note} onChange={setValue('note')} onBlur={validateOnBlur('note')}
                     maxLength={LIMITS.note} className={inputClass(errors.note)} aria-invalid={Boolean(errors.note)} aria-describedby={describedBy('note')} />
             </Field>
 
