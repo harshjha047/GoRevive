@@ -57,6 +57,7 @@ export const Footer = async () => {
               <li><Link href="/products" className="text-gray-400 hover:text-white">Our Products</Link></li>
               <li><Link href="/grading" className="text-gray-400 hover:text-white">Grading Parameters</Link></li>
               <li><Link href="/support" className="text-gray-400 hover:text-white">Support</Link></li>
+              <li><Link href="/careers" className="text-gray-400 hover:text-white">Careers</Link></li>
             </ul>
           </div>
 

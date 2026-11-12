@@ -145,3 +145,11 @@ input[type="search"]::-webkit-search-decoration {
   .cat-flash { display: none; }
   .grid-in { animation: none !important; opacity: 1 !important; }
 }
+
+/* Careers drawer: fade the backdrop, slide the panel up (mobile) or in from the right (desktop). */
+@keyframes careersFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes careersUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes careersLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-[careers"] { animation: none !important; }
+}
