@@ -48,7 +48,7 @@ const nextConfig = {
       },
       {
         // Account and checkout pages must never be indexed or cached by a CDN.
-        source: '/:path(dashboard|order|checkout|cart|login|logout)/:rest*',
+        source: '/:path(dashboard|order|checkout|cart|login|logout|hr)/:rest*',
         headers: [
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
           { key: 'Cache-Control', value: 'private, no-store' },

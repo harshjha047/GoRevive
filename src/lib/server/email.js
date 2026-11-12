@@ -48,7 +48,7 @@ function hrEmail(job, app, { attached, resumeLink }) {
 <p style="margin:0 0 16px;color:#64748b;font-size:14px">${escapeHtml(job.department)} · ${escapeHtml(job.location)} · ${escapeHtml(job.workMode)}</p>
 <table style="font-size:14px;border-collapse:collapse">
 ${row('Name', escapeHtml(app.name))}
-${row('Email', `<a href="mailto:${escapeHtml(app.email)}">${escapeHtml(app.email)}</a>`)}
+${row('Email', `<a href="mailto:${escapeHtml(app.email)}">${escapeHtml(app.email)}</a>${app.emailVerified ? ' <span style="color:#059669">✓ verified with Google</span>' : ''}`)}
 ${row('Phone', `<a href="tel:${escapeHtml(app.phone)}">${escapeHtml(app.phone)}</a>`)}
 ${row('Link', link)}
 ${row('Resume', resumeCell(app, attached, resumeLink))}
@@ -59,7 +59,7 @@ ${app.note ? `<p style="margin:16px 0 4px;color:#64748b;font-size:13px">Note fro
 <p style="margin:20px 0 0;color:#64748b;font-size:13px">Reply to this email to contact the candidate directly.</p>`);
     const text = [
         `New application: ${job.title}`,
-        `Name: ${app.name}`, `Email: ${app.email}`, `Phone: ${app.phone}`,
+        `Name: ${app.name}`, `Email: ${app.email}${app.emailVerified ? ' (verified with Google)' : ''}`, `Phone: ${app.phone}`,
         `Link: ${app.link || '-'}`, `Resume: ${!app.resume ? 'not provided' : attached ? 'attached' : 'see link'}${resumeLink ? ` (download, valid 7 days: ${resumeLink})` : ''}`,
         `Source: ${source}`, `Application ID: ${app._id}`,
         app.note ? `\nNote:\n${app.note}` : '',

@@ -1,4 +1,4 @@
-# Careers page (v1)
+# Careers page
 
 `/careers` lists open roles, `/careers/<slug>` is each role's own page (indexed by
 Google for Jobs), and candidates apply without an account. Applications are saved
@@ -28,9 +28,15 @@ through Resend.
      Security → Allow delivery of PDF and ZIP files**. Resumes stay private
      either way: they're uploaded as `private` and only reachable through
      signed, expiring links.
-5. **Rate limit behind a proxy/CDN:** set `TRUSTED_IP_HEADER` (already used by
+5. **Google prefill (optional)**: create an OAuth client ID (Web application)
+   in Google Cloud Console, add your site's origins (and
+   `http://localhost:3000`) under Authorized JavaScript origins, and set
+   `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. No secret is needed. Unset = no button.
+6. **HR page**: set `CAREERS_ADMINS` (comma-separated emails) and make sure
+   `NEXT_PUBLIC_SITE_URL` is right for the environment (sign-in links use it).
+7. **Rate limit behind a proxy/CDN:** set `TRUSTED_IP_HEADER` (already used by
    the login limiter) so the 10-applications-per-10-minutes limit is per real IP.
-6. Submit a test application with and without a resume and check both emails.
+8. Submit a test application with and without a resume and check both emails.
 
 See `.env.example` for every variable.
 
@@ -99,7 +105,45 @@ closes. Until that's automated, delete old documents
 and their Cloudinary resumes periodically, and handle deletion requests from
 `/data-deletion` by email (delete both the document and the resume).
 
-## Not in v1 (planned for v2)
+## Resume auto-fill
 
-Resume auto-fill, Google sign-in prefill, an HR dashboard with status changes,
-and object storage (R2/S3) for resumes.
+When a candidate adds a PDF, `src/lib/careers/resumeParser.js` reads it **in
+the browser** with pdf.js (loaded only then) and fills the name, email,
+phone and LinkedIn/portfolio link, but only into fields that are still empty.
+Filled fields are tagged "from resume" so the candidate checks them. Nothing
+is sent anywhere for this; an unreadable PDF simply fills nothing.
+
+## Continue with Google
+
+`components/GoogleFill.jsx` shows Google's own button (Google Identity
+Services, popup, no redirect). It fills name and email and locks the email to
+the Google address ("Use another" unlocks it). The ID token goes with the
+application and `src/lib/server/google.js` verifies it; if the email matches,
+the application is saved with `emailVerified: true` and HR sees a ✓. An
+expired token (they last 1 hour) never blocks applying; the email is just
+unverified.
+
+## HR page: /hr
+
+- **Sign-in:** `/hr/login` → enter an email in `CAREERS_ADMINS` → a one-time
+  link (15 min) is emailed via Resend → `/hr/verify` → "Continue" (a click,
+  so email link scanners can't use up the link) → 12-hour session cookie
+  `hr_session`. Removing an email from `CAREERS_ADMINS` signs it out at once.
+  The form gives the same answer for any email, so it can't reveal who is an
+  admin. Links always use `NEXT_PUBLIC_SITE_URL`, never the request's host.
+- **List:** newest first, 25 per page; filter by role and status, search name,
+  email or phone. Each card: contact links, resume (opens a 10-minute signed
+  Cloudinary link), candidate's note, source, how the form was filled, and an
+  email-failure warning if the HR notification didn't send.
+- **Actions:** change status (new → reviewing → shortlisted → interview →
+  offer → hired / rejected; each change is logged in `statusHistory` with who
+  and when) and delete (removes the application and its resume, e.g. for a
+  data deletion request).
+- `/hr` is `noindex`, `no-store` and disallowed in robots.txt.
+
+Collections: `job_applications`, `hr_login_tokens` (auto-expires).
+
+## Possible next steps
+
+Internal notes per candidate, CSV export, email templates for rejections and
+interview invites, and automatic deletion after the retention period.

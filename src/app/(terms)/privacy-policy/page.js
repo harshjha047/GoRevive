@@ -167,7 +167,7 @@ export default function PrivacyPolicyPage() {
             </h2>
             <div className="text-sm space-y-3">
               <p>
-                When you apply for a job through our Careers page, we collect your name, email address, phone or WhatsApp number, any link you share, your resume if you upload one, and any note you write. We also record which role you applied for, the time of your application, and the campaign or website that referred you (if any).
+                When you apply for a job through our Careers page, we collect your name, email address, phone or WhatsApp number, any link you share, your resume if you upload one, and any note you write. We also record which role you applied for, the time of your application, and the campaign or website that referred you (if any). If you choose “Continue with Google”, we receive only your name and verified email address from Google. If you add a resume, it is read in your browser to pre-fill the form; the file itself is stored privately with our file storage provider.
               </p>
               <p>
                 We use this information only to assess your application and contact you about it and about suitable future openings. It is shared only with the people at GoRevive involved in hiring, and with our email, database and file storage providers who store and send it on our behalf.
