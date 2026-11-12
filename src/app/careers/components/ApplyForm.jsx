@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BadgeCheck, CheckCircle2, FileText, Loader2, Sparkles, UploadCloud, X } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, ChevronDown, FileText, Loader2, UploadCloud, X } from 'lucide-react';
 import { validators, validateField, LIMITS, RESUME_ACCEPT } from '@/lib/careers/validate';
 import { loadDraft, saveDraft, clearDraft, markApplied, readUtm, captureUtm, useAppliedSlugs } from '@/lib/careers/careersStore';
 import { extractResumeFields } from '@/lib/careers/resumeParser';
@@ -15,16 +15,18 @@ const LABELS = { name: 'name', email: 'email', phone: 'phone', link: 'profile li
 
 const joinWords = (words) => (words.length < 2 ? words.join('') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`);
 
+// text-base (16px) stops iOS Safari zooming into the field on focus.
+const BOX = 'rounded-[12px] border transition focus-within:ring-2';
+const tone = (hasError, filled) =>
+    hasError ? 'border-red-400 bg-white focus-within:ring-red-100' : filled ? 'border-g300 bg-g050 focus-within:border-g500 focus-within:ring-g100' : 'border-[#C9D9D0] bg-white focus-within:border-g500 focus-within:ring-g100';
 const inputClass = (hasError, filled) =>
-    `w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:ring-2 read-only:bg-slate-50 read-only:text-slate-600 ${
-        hasError ? 'border-red-400 bg-white focus:ring-red-100' : filled ? 'border-blue-300 bg-blue-50/40 focus:border-blue-500 focus:ring-blue-100' : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-100'
-    }`;
+    `${BOX} ${tone(hasError, filled)} min-h-[48px] w-full px-3.5 py-2.5 text-base text-[#0B2136] placeholder:text-secondary/70 outline-none read-only:bg-off-white read-only:text-secondary`;
 
 function Field({ id, label, optional, badge, error, children }) {
     return (
         <div>
-            <label htmlFor={id} className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-700">
-                <span>{label} {optional && <span className="font-normal text-slate-400">(optional)</span>}</span>
+            <label htmlFor={id} className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-[#0B2136]">
+                <span>{label} {optional && <span className="font-normal text-secondary">(optional)</span>}</span>
                 {badge}
             </label>
             {children}
@@ -35,11 +37,13 @@ function Field({ id, label, optional, badge, error, children }) {
 
 const formatSize = (bytes) => (bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`);
 
-/** Short application form. Used in the drawer and on /careers/[slug]. */
-export default function ApplyForm({ job, reviewPromise, onDone }) {
+/**
+ * Short application form. Used in the drawer and on /careers/[slug].
+ * `stickySubmit` pins the submit button to the bottom of the scrolling drawer.
+ */
+export default function ApplyForm({ job, reviewPromise, onDone, stickySubmit = false }) {
     const applied = useAppliedSlugs().includes(job.slug);
     const [values, setValues] = useState(EMPTY_VALUES);
-    const [consent, setConsent] = useState(false);
     const [resume, setResume] = useState(null);
     const [errors, setErrors] = useState({});
     const [status, setStatus] = useState('idle'); // idle | uploading | sending | done
@@ -54,6 +58,7 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     const [parsing, setParsing] = useState(false);
     const [fillNotice, setFillNotice] = useState('');
     const [google, setGoogle] = useState(null); // { credential, name, email }
+    const [showMore, setShowMore] = useState(false); // link + note, folded away unless needed
     const valuesRef = useRef(values);
     useEffect(() => {
         valuesRef.current = values;
@@ -63,7 +68,10 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     useEffect(() => {
         captureUtm();
         const draft = loadDraft(job.slug);
-        if (draft) setValues({ ...EMPTY_VALUES, ...Object.fromEntries(Object.keys(EMPTY_VALUES).map((k) => [k, String(draft[k] ?? '')])) });
+        if (draft) {
+            setValues({ ...EMPTY_VALUES, ...Object.fromEntries(Object.keys(EMPTY_VALUES).map((k) => [k, String(draft[k] ?? '')])) });
+            if (draft.link || draft.note) setShowMore(true);
+        }
         loaded.current = true;
     }, [job.slug]);
 
@@ -179,8 +187,10 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
         const errs = Object.fromEntries(Object.keys(EMPTY_VALUES).map((k) => [k, validateField(k, values[k], job)]));
         errs.resume = resume ? validators.resume(resume) : '';
         setErrors(errs);
-        if (Object.values(errs).some(Boolean)) return focusFirstError(errs);
-        if (!consent) return setFormError('Please agree to the privacy notice to apply.');
+        if (Object.values(errs).some(Boolean)) {
+            if (errs.link || errs.note) setShowMore(true);
+            return setTimeout(() => focusFirstError(errs), 0);
+        }
 
         let resumeTicket = '';
         if (resume) {
@@ -222,6 +232,7 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
             }
             if (data.errors) {
                 if (data.errors.resume) uploaded.current = null;
+                if (data.errors.link || data.errors.note) setShowMore(true);
                 setErrors((prev) => ({ ...prev, ...data.errors }));
                 focusFirstError(data.errors);
             }
@@ -243,15 +254,17 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     if (status === 'done' || applied) {
         return (
             <div className="py-6 text-center" role="status">
-                <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" aria-hidden="true" />
-                <h3 className="mt-3 text-lg font-bold text-slate-900">
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#0B2136]">
+                    <CheckCircle2 className="h-8 w-8 text-lime" aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 font-display text-xl font-extrabold text-[#0B2136]">
                     {status === 'done' ? 'Application sent' : 'You’ve applied for this role'}
                 </h3>
-                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-slate-600">{reviewPromise}</p>
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-secondary">{reviewPromise}</p>
                 {status === 'done' && (
-                    <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">A confirmation is on its way to {values.email}.</p>
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-secondary">A confirmation is on its way to {values.email}.</p>
                 )}
-                <Link href="/careers" className="mt-5 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700">
+                <Link href="/careers" className="mt-6 inline-flex min-h-[44px] items-center rounded-full border border-g100 px-5 text-sm font-semibold text-g600 hover:border-g300">
                     See other open roles
                 </Link>
             </div>
@@ -260,69 +273,67 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
 
     const busy = status === 'uploading' || status === 'sending';
     const googleEnabled = isGoogleFillEnabled();
-    const fromResume = (k) => (autofilled.includes(k) ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[11px] font-medium text-blue-700">from resume</span> : null);
+    const fromResume = (k) => (autofilled.includes(k) ? <span className="ml-auto text-xs font-semibold text-g600">from resume</span> : null);
     const describedBy = (k) => (errors[k] ? `${k}-error` : undefined);
+    const optionalLabel = job.noteRequired ? 'Add your LinkedIn or portfolio link (optional)' : 'Add LinkedIn or a note (optional)';
 
     return (
         <form ref={formRef} onSubmit={submit} noValidate className="space-y-4">
-            <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4" aria-labelledby="quick-fill-title">
-                <p id="quick-fill-title" className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-                    <Sparkles className="h-4 w-4 text-blue-600" aria-hidden="true" /> Fill this in faster
-                </p>
-
-                {googleEnabled && (google ? (
-                    <p className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 text-sm text-slate-700 ring-1 ring-slate-200">
-                        <BadgeCheck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                        <span className="min-w-0 flex-1 truncate">Continued with Google as <strong className="font-semibold">{google.email}</strong></span>
-                    </p>
-                ) : (
-                    <GoogleFill onFill={applyGoogle} />
-                ))}
-
-                {googleEnabled && (
-                    <div className="flex items-center gap-3 text-xs text-slate-400" aria-hidden="true">
-                        <span className="h-px flex-1 bg-slate-200" /> and / or <span className="h-px flex-1 bg-slate-200" />
-                    </div>
-                )}
-
-                <div>
-                    {resume ? (
-                        <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-                            <FileText className="h-5 w-5 shrink-0 text-blue-600" aria-hidden="true" />
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">{resume.name}</p>
-                                <p className="text-xs text-slate-500">{formatSize(resume.size)}</p>
-                            </div>
-                            <button type="button" onClick={removeFile} disabled={busy} className="rounded-md p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-800 disabled:opacity-50" aria-label="Remove resume">
+            {/* One primary shortcut: the resume fills the form. Google is the fallback. */}
+            <div>
+                {resume ? (
+                    <div className="flex items-center gap-3 rounded-2xl border-[1.5px] border-g500 bg-g050 px-3.5 py-3">
+                        <FileText className="h-5 w-5 shrink-0 text-g600" aria-hidden="true" />
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-bold text-[#0B2136]">{resume.name}</p>
+                            <p className="text-xs text-g600">
+                                {parsing ? 'Reading your resume…' : fillNotice || formatSize(resume.size)}
+                            </p>
+                        </div>
+                        {parsing ? (
+                            <Loader2 className="h-5 w-5 shrink-0 animate-spin text-g600" aria-hidden="true" />
+                        ) : (
+                            <button type="button" onClick={removeFile} disabled={busy} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] text-secondary hover:bg-white hover:text-[#0B2136] disabled:opacity-50" aria-label="Remove resume">
                                 <X className="h-4 w-4" />
                             </button>
-                        </div>
-                    ) : (
-                        <label
-                            htmlFor="resume"
-                            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                            onDragLeave={() => setDragging(false)}
-                            onDrop={(e) => { e.preventDefault(); setDragging(false); pickFile(e.dataTransfer.files?.[0]); }}
-                            className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-white px-4 py-5 text-center transition ${
-                                dragging ? 'border-blue-500 bg-blue-50' : errors.resume ? 'border-red-300' : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'
-                            }`}
-                        >
-                            <UploadCloud className="h-6 w-6 text-slate-400" aria-hidden="true" />
-                            <span className="mt-1.5 text-sm text-slate-700"><span className="font-semibold text-blue-600">Add your resume</span><span className="hidden sm:inline"> or drag it here</span> <span className="text-slate-400">(optional)</span></span>
-                            <span className="mt-0.5 text-xs text-slate-500">PDF up to 5 MB. We’ll fill in what we can from it.</span>
-                        </label>
-                    )}
-                    <input ref={fileInput} id="resume" name="resume" type="file" accept={RESUME_ACCEPT} className="sr-only"
-                        onChange={(e) => pickFile(e.target.files?.[0])} aria-label="Resume (PDF, optional)" aria-describedby={describedBy('resume')} />
-                    {errors.resume && <p id="resume-error" className="mt-1 text-xs text-red-600" role="alert">{errors.resume}</p>}
-                    {parsing && (
-                        <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500" role="status">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Reading your resume…
-                        </p>
-                    )}
-                    {fillNotice && !parsing && <p className="mt-2 text-xs text-blue-700" role="status">{fillNotice}</p>}
+                        )}
+                    </div>
+                ) : (
+                    <label
+                        htmlFor="resume"
+                        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                        onDragLeave={() => setDragging(false)}
+                        onDrop={(e) => { e.preventDefault(); setDragging(false); pickFile(e.dataTransfer.files?.[0]); }}
+                        className={`flex min-h-[76px] cursor-pointer items-center gap-3.5 rounded-2xl border-[1.5px] border-dashed px-4 py-4 transition ${
+                            dragging ? 'border-g500 bg-g100' : errors.resume ? 'border-red-300 bg-white' : 'border-g500 bg-g050 hover:bg-g100'
+                        }`}
+                    >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-g600">
+                            <UploadCloud className="h-5 w-5 text-white" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                            <span className="block text-[15px] font-bold text-[#0B2136]">Upload resume — we fill the rest</span>
+                            <span className="mt-0.5 block text-xs text-secondary">PDF up to 5 MB<span className="hidden sm:inline"> · or drag it here</span> · optional</span>
+                        </span>
+                    </label>
+                )}
+                <input ref={fileInput} id="resume" name="resume" type="file" accept={RESUME_ACCEPT} className="sr-only"
+                    onChange={(e) => pickFile(e.target.files?.[0])} aria-label="Resume (PDF, optional)" aria-describedby={describedBy('resume')} />
+                {errors.resume && <p id="resume-error" className="mt-1 text-xs text-red-600" role="alert">{errors.resume}</p>}
+                <p className="sr-only" role="status">{parsing ? 'Reading your resume…' : fillNotice}</p>
+            </div>
+
+            {googleEnabled && (google ? (
+                <p className="flex items-center gap-2 rounded-[12px] bg-off-white px-3 py-2.5 text-sm text-[#0B2136]">
+                    <BadgeCheck className="h-4 w-4 shrink-0 text-g600" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate">Continued with Google as <strong className="font-semibold">{google.email}</strong></span>
+                </p>
+            ) : !resume && (
+                <div className="space-y-2">
+                    <p className="text-center text-xs text-secondary">No resume handy? Fill in with Google, or just type below.</p>
+                    <GoogleFill onFill={applyGoogle} />
                 </div>
-            </section>
+            ))}
 
             <Field id="name" label="Full name" badge={fromResume('name')} error={errors.name}>
                 <input id="name" name="name" autoComplete="name" value={values.name} onChange={setValue('name')} onBlur={validateOnBlur('name')}
@@ -331,26 +342,50 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
             <Field id="email" label="Email" error={errors.email}
                 badge={google ? (
                     <span className="ml-auto flex items-center gap-2 text-xs font-normal">
-                        <span className="flex items-center gap-1 text-emerald-700"><BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />Verified with Google</span>
-                        <button type="button" onClick={unlinkGoogle} className="text-blue-600 hover:underline">Use another</button>
+                        <span className="flex items-center gap-1 text-g600"><BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />Verified with Google</span>
+                        <button type="button" onClick={unlinkGoogle} className="font-semibold text-g600 underline-offset-2 hover:underline">Use another</button>
                     </span>
                 ) : fromResume('email')}>
                 <input id="email" name="email" type="email" autoComplete="email" inputMode="email" value={values.email} onChange={setValue('email')} readOnly={Boolean(google)}
                     onBlur={validateOnBlur('email')} maxLength={LIMITS.email} className={inputClass(errors.email, autofilled.includes('email'))} aria-invalid={Boolean(errors.email)} aria-describedby={describedBy('email')} />
             </Field>
             <Field id="phone" label="Phone / WhatsApp" badge={fromResume('phone')} error={errors.phone}>
-                <input id="phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" placeholder="98XXXXXXXX" value={values.phone}
-                    onChange={setValue('phone')} onBlur={validateOnBlur('phone')} maxLength={20} className={inputClass(errors.phone, autofilled.includes('phone'))} aria-invalid={Boolean(errors.phone)} aria-describedby={describedBy('phone')} />
-            </Field>
-            <Field id="link" label="LinkedIn or portfolio link" optional badge={fromResume('link')} error={errors.link}>
-                <input id="link" name="link" type="url" inputMode="url" placeholder="linkedin.com/in/yourname" value={values.link}
-                    onChange={setValue('link')} onBlur={validateOnBlur('link')} maxLength={LIMITS.link} className={inputClass(errors.link, autofilled.includes('link'))} aria-invalid={Boolean(errors.link)} aria-describedby={describedBy('link')} />
+                {/* +91 is shown, not sent: normalizePhone already accepts 10 digits, +91… and other +codes. */}
+                <div className={`${BOX} ${tone(errors.phone, autofilled.includes('phone'))} flex min-h-[48px] overflow-hidden`}>
+                    <span className="flex items-center border-r border-g100 px-3 text-base text-secondary" aria-hidden="true">+91</span>
+                    <input id="phone" name="phone" type="tel" autoComplete="tel-national" inputMode="tel" placeholder="98765 43210" value={values.phone}
+                        onChange={setValue('phone')} onBlur={validateOnBlur('phone')} maxLength={20}
+                        className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base text-[#0B2136] placeholder:text-secondary/70 outline-none"
+                        aria-invalid={Boolean(errors.phone)} aria-describedby={describedBy('phone')} />
+                </div>
             </Field>
 
-            <Field id="note" label={job.notePrompt || 'Anything you want us to know?'} optional={!job.noteRequired} error={errors.note}>
-                <textarea id="note" name="note" rows={job.noteRequired ? 4 : 3} value={values.note} onChange={setValue('note')} onBlur={validateOnBlur('note')}
-                    maxLength={LIMITS.note} className={inputClass(errors.note)} aria-invalid={Boolean(errors.note)} aria-describedby={describedBy('note')} />
-            </Field>
+            {job.noteRequired && (
+                <Field id="note" label={job.notePrompt || 'Anything you want us to know?'} error={errors.note}>
+                    <textarea id="note" name="note" rows={4} value={values.note} onChange={setValue('note')} onBlur={validateOnBlur('note')}
+                        maxLength={LIMITS.note} className={inputClass(errors.note)} aria-invalid={Boolean(errors.note)} aria-describedby={describedBy('note')} />
+                </Field>
+            )}
+
+            <div>
+                <button type="button" onClick={() => setShowMore((v) => !v)} aria-expanded={showMore} aria-controls="apply-more"
+                    className="flex min-h-[40px] items-center gap-1 text-sm font-bold text-g600 hover:text-g700">
+                    {showMore ? 'Hide optional details' : `+ ${optionalLabel}`}
+                    <ChevronDown className={`h-4 w-4 transition ${showMore ? 'rotate-180' : ''}`} aria-hidden="true" />
+                </button>
+                <div id="apply-more" hidden={!showMore} className="mt-2 space-y-4">
+                    <Field id="link" label="LinkedIn or portfolio link" optional badge={fromResume('link')} error={errors.link}>
+                        <input id="link" name="link" type="url" inputMode="url" placeholder="linkedin.com/in/yourname" value={values.link}
+                            onChange={setValue('link')} onBlur={validateOnBlur('link')} maxLength={LIMITS.link} className={inputClass(errors.link, autofilled.includes('link'))} aria-invalid={Boolean(errors.link)} aria-describedby={describedBy('link')} />
+                    </Field>
+                    {!job.noteRequired && (
+                        <Field id="note" label={job.notePrompt || 'Anything you want us to know?'} optional error={errors.note}>
+                            <textarea id="note" name="note" rows={3} value={values.note} onChange={setValue('note')} onBlur={validateOnBlur('note')}
+                                maxLength={LIMITS.note} className={inputClass(errors.note)} aria-invalid={Boolean(errors.note)} aria-describedby={describedBy('note')} />
+                        </Field>
+                    )}
+                </div>
+            </div>
 
             {/* Honeypot: hidden from people and screen readers; bots fill it in. */}
             <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
@@ -358,22 +393,20 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
                 <input id="company_website" name="company_website" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
             </div>
 
-            <label className="flex items-start gap-2.5 text-sm text-slate-600">
-                <input type="checkbox" checked={consent} onChange={(e) => { setConsent(e.target.checked); setFormError(''); }}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                <span>
-                    I agree that GoRevive may use these details to consider me for this role, as described in the{' '}
-                    <Link href="/privacy-policy#job-applicants" target="_blank" className="font-medium text-blue-600 underline-offset-2 hover:underline">privacy policy</Link>.
-                </span>
-            </label>
+            {formError && <p className="rounded-[12px] bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{formError}</p>}
 
-            {formError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{formError}</p>}
-
-            <button type="submit" disabled={busy}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">
-                {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                {status === 'uploading' ? `Uploading resume… ${progress}%` : status === 'sending' ? 'Sending…' : 'Submit application'}
-            </button>
+            <div className={`space-y-2 ${stickySubmit ? 'sticky -bottom-5 -mx-5 border-t border-g100 bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3' : 'pt-1'}`}>
+                <button type="submit" disabled={busy}
+                    className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-g600 px-4 font-display text-base font-bold text-white transition hover:bg-g700 disabled:cursor-not-allowed disabled:opacity-70">
+                    {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                    {status === 'uploading' ? `Uploading resume… ${progress}%` : status === 'sending' ? 'Sending…' : 'Submit application'}
+                </button>
+                {/* Submitting is the consent action; the API still records consentAt. */}
+                <p className="text-center text-xs leading-relaxed text-secondary">
+                    By applying you agree GoRevive may use these details to consider you for this role, as described in our{' '}
+                    <Link href="/privacy-policy#job-applicants" target="_blank" className="font-semibold text-g600 underline-offset-2 hover:underline">privacy policy</Link>.
+                </p>
+            </div>
         </form>
     );
 }

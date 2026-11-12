@@ -9,8 +9,9 @@
 //   employmentType  schema.org value: FULL_TIME, PART_TIME, CONTRACTOR, INTERN
 //   responsibilities / skills / requirements / goodToHave / perks  bullet lists
 //                   (requirements and goodToHave are optional)
-//   salary          Optional. { min, max, unit: 'MONTH' | 'YEAR' } in INR. Shown
-//                   on the page and sent to Google for Jobs. Leave out until confirmed.
+//   salary          Optional. { min, max, unit: 'MONTH' | 'YEAR', note } in INR. Shown
+//                   on the card, the page and sent to Google for Jobs. `note` is
+//                   display-only text such as 'or as discussed'.
 //   notePrompt      Optional label for the form's note field; noteRequired makes it mandatory.
 //   postedAt / validThrough  ISO dates (YYYY-MM-DD).
 
@@ -29,6 +30,13 @@ export const CAREERS_OFFICE = {
 // Shown on the confirmation screen and in the candidate's email. Only promise
 // what the hiring team will actually do.
 export const REVIEW_PROMISE = 'Our hiring team reviews every application. If your profile is a match, we will email you within 7 working days.';
+
+// "What happens next" on /careers. Keep in line with REVIEW_PROMISE.
+export const HIRING_STEPS = [
+    { title: 'Apply in a minute', text: 'Upload your resume and we fill in the rest. You get a confirmation email straight away.' },
+    { title: 'We review every application', text: 'If your profile is a match, we email you within 7 working days.' },
+    { title: 'A quick call, then we meet', text: 'A 5-minute call, then a meeting at our Okhla office.' },
+];
 
 export const JOBS = [
     {
@@ -73,8 +81,9 @@ export const JOBS = [
             'Work that cuts e-waste and carbon emissions for hundreds of companies',
             'Competitive salary and performance-linked incentives',
         ],
+        salary: { min: 100000, max: 300000, unit: 'YEAR', note: 'or as discussed' },
         notePrompt: 'Tell us about a campaign you’re proud of (with numbers)',
-        noteRequired: true,
+        noteRequired: false,
         postedAt: '2026-11-12',
         validThrough: '2027-02-12',
         active: true,
@@ -91,13 +100,27 @@ export const getOpenJobs = (now = new Date()) => JOBS.filter((j) => isOpen(j, no
 export const getJob = (slug) => JOBS.find((j) => j.slug === slug) || null;
 
 const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+const lakh = (n) => String(Number((n / 100000).toFixed(1)));
 
-/** "₹18,000 – ₹28,000 / month", or null when no salary is set. */
+/**
+ * "₹1–3 LPA · or as discussed", "₹18,000 – ₹28,000 / month", or null when no
+ * salary is set. Yearly amounts of a lakh or more are shown in LPA, the way
+ * Indian candidates compare offers.
+ */
 export function formatSalary(salary) {
     if (!salary?.min && !salary?.max) return null;
-    const unit = salary.unit === 'MONTH' ? 'month' : 'year';
-    const range = salary.min && salary.max && salary.min !== salary.max
-        ? `${inr.format(salary.min)} – ${inr.format(salary.max)}`
-        : inr.format(salary.max || salary.min);
-    return `${range} / ${unit}`;
+    const lo = salary.min || salary.max;
+    const hi = salary.max || salary.min;
+    let text;
+    if (salary.unit !== 'MONTH' && lo >= 100000) {
+        text = lo === hi ? `₹${lakh(lo)} LPA` : `₹${lakh(lo)}–${lakh(hi)} LPA`;
+    } else {
+        const unit = salary.unit === 'MONTH' ? 'month' : 'year';
+        text = `${lo === hi ? inr.format(lo) : `${inr.format(lo)} – ${inr.format(hi)}`} / ${unit}`;
+    }
+    return salary.note ? `${text} · ${salary.note}` : text;
 }
+
+/** "12 Nov 2026" for an ISO date. */
+export const formatDate = (iso) =>
+    iso ? new Date(`${iso}T12:00:00+05:30`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : '';

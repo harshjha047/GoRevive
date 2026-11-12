@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import JsonLd from '@/components/utils/SEO/JsonLd';
 import { pageMetadata, SITE_URL, SITE_NAME } from '@/lib/site';
-import { JOBS, getJob, isOpen, REVIEW_PROMISE, CAREERS_OFFICE, formatSalary } from '@/lib/careers/jobs';
+import { JOBS, getJob, isOpen, REVIEW_PROMISE, CAREERS_OFFICE, formatSalary, formatDate } from '@/lib/careers/jobs';
 import JobDetails, { JobMeta } from '../components/JobDetails';
 import ApplyForm from '../components/ApplyForm';
 
@@ -77,39 +77,53 @@ export default async function JobPage({ params }) {
     const open = isOpen(job);
 
     return (
-        <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-off-white px-4 pb-28 pt-6 text-[#0B2136] sm:px-6 lg:px-8 lg:pb-20">
             {open && <JsonLd data={jobPostingSchema(job)} />}
-            <div className="container mx-auto max-w-5xl">
-                <Link href="/careers" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-blue-700">
+            <div className="container mx-auto max-w-6xl">
+                <Link href="/careers" className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-semibold text-g600 hover:text-g700">
                     <ArrowLeft className="h-4 w-4" aria-hidden="true" /> All open roles
                 </Link>
 
-                <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_400px] lg:items-start">
-                    <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{job.department}</p>
-                        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{job.title}</h1>
-                        <JobMeta job={job} className="mt-3" />
-                        <hr className="my-6 border-slate-100" />
+                <header className="mt-2 rounded-3xl bg-[#0B2136] px-6 py-8 text-white sm:px-10 sm:py-10">
+                    <p className="font-display text-xs font-bold uppercase tracking-[0.15em] text-lime">
+                        {job.department}{job.postedAt && ` · Posted ${formatDate(job.postedAt)}`}
+                    </p>
+                    <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">{job.title}</h1>
+                    <JobMeta job={job} tone="dark" className="mt-4" />
+                </header>
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_420px] lg:items-start">
+                    <article className="rounded-3xl border border-g100 bg-white p-6 sm:p-10">
                         <JobDetails job={job} />
                     </article>
 
-                    <aside id="apply" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-24">
+                    <aside id="apply" className="scroll-mt-6 rounded-3xl border border-g100 bg-white p-6 shadow-card-hover sm:p-7 lg:sticky lg:top-24">
                         {open ? (
                             <>
-                                <h2 className="mb-1 text-lg font-bold text-slate-900">Quick apply</h2>
-                                <p className="mb-5 text-sm text-slate-500">Takes under a minute. No account needed.</p>
+                                <div className="mb-5 flex items-baseline justify-between gap-3">
+                                    <h2 className="font-display text-xl font-extrabold">Apply</h2>
+                                    <span className="text-sm font-semibold text-secondary">~1 min · no account</span>
+                                </div>
                                 <ApplyForm job={job} reviewPromise={REVIEW_PROMISE} />
                             </>
                         ) : (
                             <div className="text-center">
-                                <h2 className="text-lg font-bold text-slate-900">This role is closed</h2>
-                                <p className="mt-2 text-sm text-slate-600">We’re no longer taking applications for it.</p>
-                                <Link href="/careers" className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700">See open roles</Link>
+                                <h2 className="font-display text-lg font-extrabold">This role is closed</h2>
+                                <p className="mt-2 text-sm text-secondary">We’re no longer taking applications for it.</p>
+                                <Link href="/careers" className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-g600 hover:text-g700">See open roles</Link>
                             </div>
                         )}
                     </aside>
                 </div>
             </div>
+
+            {/* Below lg the form sits under the brief; keep the way to it one tap away. */}
+            {open && (
+                <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-g100 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(10,31,20,0.06)] lg:hidden">
+                    <p className="min-w-0 flex-1 text-sm text-secondary">No account · <span className="font-semibold text-[#0B2136]">about a minute</span></p>
+                    <a href="#apply" className="inline-flex min-h-[48px] items-center rounded-full bg-g600 px-7 font-display text-[15px] font-bold text-white hover:bg-g700">Apply</a>
+                </div>
+            )}
         </div>
     );
 }
