@@ -19,7 +19,10 @@ export const escapeHtml = (value) =>
 // Header-safe: strips line breaks so input can never add an email header.
 const oneLine = (value) => String(value ?? '').replace(/[\r\n]+/g, ' ').trim();
 
-const inboxList = () => String(process.env.CAREERS_INBOX || '').split(',').map((s) => s.trim()).filter(Boolean);
+const list = (value) => String(value || '').split(',').map((s) => s.trim()).filter(Boolean);
+const inboxList = () => list(process.env.CAREERS_INBOX);
+// Silent copy of every HR notification, e.g. the hiring lead.
+const bccList = () => list(process.env.CAREERS_BCC);
 
 const row = (label, value) =>
     `<tr><td style="padding:6px 12px 6px 0;color:#64748b;vertical-align:top;white-space:nowrap">${label}</td><td style="padding:6px 0;color:#0f172a">${value}</td></tr>`;
@@ -30,7 +33,14 @@ const layout = (body) => `<!doctype html><html><body style="margin:0;background:
 <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">${SITE_NAME} · <a href="${SITE_URL}" style="color:#94a3b8">${SITE_URL.replace(/^https?:\/\//, '')}</a></p>
 </div></body></html>`;
 
-function hrEmail(job, app) {
+function resumeCell(app, attached, resumeLink) {
+    if (!app.resume) return 'Not provided';
+    const link = resumeLink ? ` · <a href="${escapeHtml(resumeLink)}">Download</a> <span style="color:#94a3b8">(link valid 7 days)</span>` : '';
+    const status = attached ? 'attached' : 'not attached, use the link';
+    return `${escapeHtml(app.resume.filename)} (${status})${link}<br><span style="color:#94a3b8;font-size:12px">Cloudinary: ${escapeHtml(app.resume.publicId)}</span>`;
+}
+
+function hrEmail(job, app, { attached, resumeLink }) {
     const link = app.link ? `<a href="${escapeHtml(app.link)}">${escapeHtml(app.link)}</a>` : '—';
     const source = [app.source?.utmSource, app.source?.utmMedium, app.source?.utmCampaign].filter(Boolean).join(' / ') || app.source?.referrer || 'direct';
     const html = layout(`
@@ -41,7 +51,7 @@ ${row('Name', escapeHtml(app.name))}
 ${row('Email', `<a href="mailto:${escapeHtml(app.email)}">${escapeHtml(app.email)}</a>`)}
 ${row('Phone', `<a href="tel:${escapeHtml(app.phone)}">${escapeHtml(app.phone)}</a>`)}
 ${row('Link', link)}
-${row('Resume', app.resume ? `${escapeHtml(app.resume.filename)} (attached)` : 'Not provided')}
+${row('Resume', resumeCell(app, attached, resumeLink))}
 ${row('Source', escapeHtml(source))}
 ${row('Application ID', escapeHtml(String(app._id)))}
 </table>
@@ -50,7 +60,7 @@ ${app.note ? `<p style="margin:16px 0 4px;color:#64748b;font-size:13px">Note fro
     const text = [
         `New application: ${job.title}`,
         `Name: ${app.name}`, `Email: ${app.email}`, `Phone: ${app.phone}`,
-        `Link: ${app.link || '-'}`, `Resume: ${app.resume ? 'attached' : 'not provided'}`,
+        `Link: ${app.link || '-'}`, `Resume: ${!app.resume ? 'not provided' : attached ? 'attached' : 'see link'}${resumeLink ? ` (download, valid 7 days: ${resumeLink})` : ''}`,
         `Source: ${source}`, `Application ID: ${app._id}`,
         app.note ? `\nNote:\n${app.note}` : '',
     ].join('\n');
@@ -75,27 +85,28 @@ async function send(payload) {
 }
 
 /**
- * Sends the HR notification (with the resume attached) and the candidate's
+ * Sends the HR notification (resume attached, plus a 7-day download link, Bcc CAREERS_BCC) and the candidate's
  * confirmation. Never throws: the application is already saved, so a failed
  * email is recorded on the application rather than shown to the candidate.
  */
-export async function sendApplicationEmails({ job, application, resume, reviewPromise }) {
+export async function sendApplicationEmails({ job, application, attachment, resumeLink, reviewPromise }) {
     if (!isEmailConfigured()) {
         return { hr: 'skipped: email not configured', candidate: 'skipped: email not configured' };
     }
     const from = process.env.CAREERS_FROM;
-    const hr = hrEmail(job, application);
+    const hr = hrEmail(job, application, { attached: Boolean(attachment), resumeLink });
     const candidate = candidateEmail(job, application, reviewPromise);
 
     const [hrResult, candidateResult] = await Promise.allSettled([
         send({
             from,
             to: inboxList(),
+            bcc: bccList().length ? bccList() : undefined,
             replyTo: application.email,
             subject: oneLine(`Application: ${job.title} – ${application.name}`),
             html: hr.html,
             text: hr.text,
-            attachments: resume ? [{ filename: resume.filename, content: resume.buffer, contentType: resume.mime }] : undefined,
+            attachments: attachment ? [{ filename: attachment.filename, content: attachment.buffer, contentType: attachment.mime }] : undefined,
         }),
         send({
             from,

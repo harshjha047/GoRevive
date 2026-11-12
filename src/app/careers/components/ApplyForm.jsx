@@ -35,7 +35,9 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     const [consent, setConsent] = useState(false);
     const [resume, setResume] = useState(null);
     const [errors, setErrors] = useState({});
-    const [status, setStatus] = useState('idle'); // idle | sending | done
+    const [status, setStatus] = useState('idle'); // idle | uploading | sending | done
+    const [progress, setProgress] = useState(0);
+    const uploaded = useRef(null); // { file, ticket } of the last successful upload
     const [formError, setFormError] = useState('');
     const [dragging, setDragging] = useState(false);
     const fileInput = useRef(null);
@@ -46,7 +48,6 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
     useEffect(() => {
         captureUtm();
         const draft = loadDraft(job.slug);
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from localStorage after mount
         if (draft) setValues({ ...EMPTY_VALUES, ...Object.fromEntries(Object.keys(EMPTY_VALUES).map((k) => [k, String(draft[k] ?? '')])) });
         loaded.current = true;
     }, [job.slug]);
@@ -82,6 +83,45 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
         if (first) formRef.current?.querySelector(`[name="${first}"]`)?.focus();
     };
 
+    // Uploads the PDF straight to Cloudinary with a server-signed request and
+    // returns the ticket the apply API needs. The same file isn't uploaded twice
+    // if the candidate fixes another field and submits again.
+    async function uploadResume(file) {
+        if (uploaded.current?.file === file) return uploaded.current.ticket;
+        const signRes = await fetch('/api/careers/resume-upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobSlug: job.slug }),
+        });
+        const sign = await signRes.json().catch(() => ({}));
+        if (!signRes.ok || !sign.success) throw new Error(sign.message || 'Could not start the upload.');
+
+        const body = new FormData();
+        Object.entries(sign.fields).forEach(([k, v]) => body.append(k, String(v)));
+        body.append('file', file);
+
+        await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', sign.uploadUrl);
+            xhr.upload.onprogress = (e) => e.lengthComputable && setProgress(Math.round((e.loaded / e.total) * 100));
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) return resolve();
+                let message = 'Upload failed. Please check the file is a PDF under 5 MB.';
+                try {
+                    const m = JSON.parse(xhr.responseText)?.error?.message || '';
+                    if (/format/i.test(m)) message = 'Please upload a PDF file.';
+                } catch {
+                    /* keep default */
+                }
+                reject(new Error(message));
+            };
+            xhr.onerror = () => reject(new Error('Network error while uploading. Please try again.'));
+            xhr.send(body);
+        });
+        uploaded.current = { file, ticket: sign.ticket };
+        return sign.ticket;
+    }
+
     async function submit(e) {
         e.preventDefault();
         setFormError('');
@@ -91,27 +131,44 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
         if (Object.values(errs).some(Boolean)) return focusFirstError(errs);
         if (!consent) return setFormError('Please agree to the privacy notice to apply.');
 
-        const body = new FormData();
-        body.append('jobSlug', job.slug);
-        Object.entries(values).forEach(([k, v]) => body.append(k, v));
-        body.append('consent', 'true');
-        if (resume) body.append('resume', resume);
-        body.append('company_website', formRef.current?.elements.company_website?.value || '');
-        Object.entries(readUtm()).forEach(([k, v]) => v && body.append(k, v));
+        let resumeTicket = '';
+        if (resume) {
+            setStatus('uploading');
+            setProgress(0);
+            try {
+                resumeTicket = await uploadResume(resume);
+            } catch (error) {
+                setErrors((prev) => ({ ...prev, resume: error.message }));
+                focusFirstError({ resume: true });
+                setStatus('idle');
+                return;
+            }
+        }
+
+        const payload = {
+            jobSlug: job.slug,
+            ...values,
+            consent: true,
+            resumeTicket,
+            resumeName: resume?.name || '',
+            company_website: formRef.current?.elements.company_website?.value || '',
+            ...readUtm(),
+        };
 
         setStatus('sending');
         try {
-            const res = await fetch('/api/careers/apply', { method: 'POST', body });
+            const res = await fetch('/api/careers/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
             const data = await res.json().catch(() => ({}));
-            if (res.ok && data.success) {
-                finish();
-                return;
-            }
-            if (data.alreadyApplied) {
+            if ((res.ok && data.success) || data.alreadyApplied) {
                 finish();
                 return;
             }
             if (data.errors) {
+                if (data.errors.resume) uploaded.current = null;
                 setErrors((prev) => ({ ...prev, ...data.errors }));
                 focusFirstError(data.errors);
             }
@@ -148,6 +205,7 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
         );
     }
 
+    const busy = status === 'uploading' || status === 'sending';
     const describedBy = (k) => (errors[k] ? `${k}-error` : undefined);
 
     return (
@@ -193,7 +251,7 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
                     >
                         <UploadCloud className="h-6 w-6 text-slate-400" aria-hidden="true" />
                         <span className="mt-1.5 text-sm text-slate-700"><span className="font-semibold text-blue-600">Choose a file</span><span className="hidden sm:inline"> or drag it here</span></span>
-                        <span className="mt-0.5 text-xs text-slate-500">PDF or DOCX, up to 4 MB. No resume on your phone? Skip it.</span>
+                        <span className="mt-0.5 text-xs text-slate-500">PDF only, up to 5 MB. No resume on your phone? Skip it.</span>
                     </label>
                 )}
                 <input ref={fileInput} id="resume" name="resume" type="file" accept={RESUME_ACCEPT} className="sr-only"
@@ -222,10 +280,10 @@ export default function ApplyForm({ job, reviewPromise, onDone }) {
 
             {formError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{formError}</p>}
 
-            <button type="submit" disabled={status === 'sending'}
+            <button type="submit" disabled={busy}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">
-                {status === 'sending' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                {status === 'sending' ? 'Sending…' : 'Submit application'}
+                {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                {status === 'uploading' ? `Uploading resume… ${progress}%` : status === 'sending' ? 'Sending…' : 'Submit application'}
             </button>
         </form>
     );

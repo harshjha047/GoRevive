@@ -12,6 +12,7 @@
     "@cashfreepayments/cashfree-js": "^1.0.7",
     "@tailwindcss/postcss": "^4.3.2",
     "axios": "^1.21.0",
+    "cloudinary": "^2.11.0",
     "jose": "^6.2.3",
     "lucide-react": "^1.21.0",
     "mongodb": "^6.22.0",

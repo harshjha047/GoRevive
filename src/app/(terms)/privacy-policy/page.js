@@ -170,7 +170,7 @@ export default function PrivacyPolicyPage() {
                 When you apply for a job through our Careers page, we collect your name, email address, phone or WhatsApp number, any link you share, your resume if you upload one, and any note you write. We also record which role you applied for, the time of your application, and the campaign or website that referred you (if any).
               </p>
               <p>
-                We use this information only to assess your application and contact you about it and about suitable future openings. It is shared only with the people at GoRevive involved in hiring, and with our email and database providers who store and send it on our behalf.
+                We use this information only to assess your application and contact you about it and about suitable future openings. It is shared only with the people at GoRevive involved in hiring, and with our email, database and file storage providers who store and send it on our behalf.
               </p>
               <p>
                 We do not use your location, device or browser details to assess applications. We keep applications for up to 12 months after the role closes and then delete them. You can ask us to delete your application earlier through our{' '}

@@ -6,10 +6,10 @@ export const LIMITS = {
     email: 120,
     link: 200,
     note: 1000,
-    resumeBytes: 4 * 1024 * 1024, // 4 MB: stays under Vercel's 4.5 MB request limit
+    resumeBytes: 5 * 1024 * 1024, // 5 MB (uploaded straight to Cloudinary, not through our API)
 };
 
-export const RESUME_ACCEPT = '.pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+export const RESUME_ACCEPT = '.pdf,application/pdf';
 
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[a-z]{2,}$/i;
 
@@ -58,8 +58,8 @@ export const validators = {
     },
     resume(file) {
         if (!file) return '';
-        if (file.size > LIMITS.resumeBytes) return 'Resume must be under 4 MB.';
-        if (!/\.(pdf|docx)$/i.test(file.name || '')) return 'Please upload a PDF or DOCX file.';
+        if (!/\.pdf$/i.test(file.name || '') || (file.type && file.type !== 'application/pdf')) return 'Please upload a PDF file.';
+        if (file.size > LIMITS.resumeBytes) return 'Resume must be under 5 MB.';
         return '';
     },
 };
