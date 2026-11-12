@@ -81,7 +81,7 @@ export const JOBS = [
             'Work that cuts e-waste and carbon emissions for hundreds of companies',
             'Competitive salary and performance-linked incentives',
         ],
-        salary: { min: 100000, max: 300000, unit: 'YEAR', note: 'or as discussed' },
+        salary: { min: 250000, max: 300000, unit: 'YEAR', note: 'or as discussed' },
         notePrompt: 'Tell us about a campaign you’re proud of (with numbers)',
         noteRequired: false,
         postedAt: '2026-11-12',
