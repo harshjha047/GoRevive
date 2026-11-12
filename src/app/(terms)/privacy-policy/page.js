@@ -161,6 +161,25 @@ export default function PrivacyPolicyPage() {
             </p>
           </section>
 
+          <section id="job-applicants" className="scroll-mt-24">
+            <h2 className="text-2xl font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <span className="text-indigo-500 text-lg">08.</span> Job Applicants
+            </h2>
+            <div className="text-sm space-y-3">
+              <p>
+                When you apply for a job through our Careers page, we collect your name, email address, phone or WhatsApp number, any link you share, your resume if you upload one, and any note you write. We also record which role you applied for, the time of your application, and the campaign or website that referred you (if any).
+              </p>
+              <p>
+                We use this information only to assess your application and contact you about it and about suitable future openings. It is shared only with the people at GoRevive involved in hiring, and with our email and database providers who store and send it on our behalf.
+              </p>
+              <p>
+                We do not use your location, device or browser details to assess applications. We keep applications for up to 12 months after the role closes and then delete them. You can ask us to delete your application earlier through our{' '}
+                <a href="/data-deletion" className="text-indigo-600 underline underline-offset-2">Data Deletion Request</a> page or by emailing{' '}
+                <a href="mailto:support@gorevive.in" className="text-indigo-600 underline underline-offset-2">support@gorevive.in</a>.
+              </p>
+            </div>
+          </section>
+
         </div>
 
         {/* Footer / CTA Section */}

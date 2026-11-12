@@ -1,5 +1,6 @@
 import { getProductBundles } from '@/lib/server/inventory';
 import { SITE_URL } from '@/lib/site';
+import { getOpenJobs } from '@/lib/careers/jobs';
 
 // Served at /sitemap.xml and refreshed hourly.
 export const revalidate = 3600;
@@ -10,6 +11,7 @@ const STATIC_PAGES = [
     { path: '/grading', changeFrequency: 'monthly', priority: 0.7 },
     { path: '/about', changeFrequency: 'monthly', priority: 0.6 },
     { path: '/support', changeFrequency: 'monthly', priority: 0.5 },
+    { path: '/careers', changeFrequency: 'weekly', priority: 0.6 },
     { path: '/warranty-policy', changeFrequency: 'yearly', priority: 0.4 },
     { path: '/return-policy', changeFrequency: 'yearly', priority: 0.4 },
     { path: '/shipping-policy', changeFrequency: 'yearly', priority: 0.3 },
@@ -33,6 +35,10 @@ export default async function sitemap() {
         changeFrequency,
         priority,
     }));
+
+    for (const job of getOpenJobs(now)) {
+        entries.push({ url: `${SITE_URL}/careers/${job.slug}`, lastModified: validDate(job.postedAt) || now, changeFrequency: 'weekly', priority: 0.6 });
+    }
 
     let products = [];
     try {
