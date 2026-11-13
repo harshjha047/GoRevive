@@ -40,17 +40,23 @@ function jobPostingSchema(job) {
         validThrough: job.validThrough ? `${job.validThrough}T23:59:59+05:30` : undefined,
         employmentType: job.employmentType,
         hiringOrganization: { '@type': 'Organization', name: 'GoRevive Private Limited', sameAs: SITE_URL, logo: `${SITE_URL}/favicon.ico` },
-        jobLocation: {
-            '@type': 'Place',
-            address: {
-                '@type': 'PostalAddress',
-                streetAddress: CAREERS_OFFICE.street,
-                addressLocality: CAREERS_OFFICE.locality,
-                addressRegion: CAREERS_OFFICE.region,
-                postalCode: CAREERS_OFFICE.postalCode,
-                addressCountry: CAREERS_OFFICE.country,
-            },
-        },
+        // One Place per base city when the role covers several; otherwise the office.
+        jobLocation: job.baseLocations?.length
+            ? job.baseLocations.map((l) => ({
+                  '@type': 'Place',
+                  address: { '@type': 'PostalAddress', addressLocality: l.city, addressRegion: l.region, addressCountry: CAREERS_OFFICE.country },
+              }))
+            : {
+                  '@type': 'Place',
+                  address: {
+                      '@type': 'PostalAddress',
+                      streetAddress: CAREERS_OFFICE.street,
+                      addressLocality: CAREERS_OFFICE.locality,
+                      addressRegion: CAREERS_OFFICE.region,
+                      postalCode: CAREERS_OFFICE.postalCode,
+                      addressCountry: CAREERS_OFFICE.country,
+                  },
+              },
         directApply: true,
         url: `${SITE_URL}/careers/${job.slug}`,
     };

@@ -5,6 +5,10 @@
 //   slug            URL of the role: /careers/<slug>. Never reuse a slug.
 //   department      Used for the filter pills (hidden while there's only one).
 //   workMode        'On-site' | 'Hybrid' | 'Remote'
+//   location        Shown on the card, e.g. 'Okhla, New Delhi'.
+//   baseLocations   Optional. For roles based in several cities:
+//                   [{ city, region }]. Sent to Google for Jobs as one location
+//                   per city; without it, the Okhla office address is used.
 //   experience      Shown on the card. experienceMonths is the minimum, for Google.
 //   employmentType  schema.org value: FULL_TIME, PART_TIME, CONTRACTOR, INTERN
 //   responsibilities / skills / requirements / goodToHave / perks  bullet lists
@@ -90,45 +94,50 @@ export const JOBS = [
     },
     {
         slug: 'sales-executive',
-        title: 'Sales Executive',
+        title: 'Channel / Corporate Sales Executive',
         department: 'Sales',
         workMode: 'On-site',
-        location: 'Okhla, New Delhi',
+        location: 'Delhi, Chandigarh, Jaipur, Agra',
+        baseLocations: [
+            { city: 'New Delhi', region: 'Delhi' },
+            { city: 'Chandigarh', region: 'Chandigarh' },
+            { city: 'Jaipur', region: 'Rajasthan' },
+            { city: 'Agra', region: 'Uttar Pradesh' },
+        ],
         experience: '3+ years',
         experienceMonths: 36,
         employmentType: 'FULL_TIME',
-        summary: 'Bring in new business for GoRevive: companies that want to sell or safely dispose of old IT hardware through our buyback and IT asset disposal services, and businesses that want to buy pre-owned laptops and mobile phones in bulk, at 50–70% below the price of new. You’ll run each deal from the first call to the closed order, and keep clients coming back.',
+        summary: 'Bring in new business for GoRevive: companies that want to sell or safely dispose of old IT hardware, and businesses that want to buy certified pre-owned laptops and mobile phones in bulk, at 50–70% below the original price. You’ll grow revenue through channel partners, B2B clients and retail, open new markets, and keep partners coming back. Based in Delhi, Chandigarh, Jaipur or Agra.',
         responsibilities: [
-            'Reach out to companies with old IT hardware: IT heads, procurement, admin and finance teams',
-            'Explain our buyback and disposal service in plain terms: valuation, pickup, data destruction certificates and proper recycling',
+            'Reach out to companies with old IT hardware for buyback',
             'Sell pre-owned laptops and mobile phones in bulk to businesses, startups and resellers',
-            'Reply fast to enquiries from the website, calls, email and LinkedIn',
-            'Send quotes, negotiate price and close orders, working with our operations and logistics teams',
-            'Keep your leads and follow-ups up to date',
-            'Stay in touch with existing clients to win repeat orders',
-            'Send a short weekly update: calls made, meetings held, quotes sent, orders closed',
+            'Deliver month-on-month revenue growth',
+            'Manage and grow channel partners',
+            'Open new markets in your region',
+            'Win recurring business from current partners',
+            'Manage leads from first contact to closed order',
         ],
-        skills: ['B2B sales', 'Negotiation & closing', 'English & Hindi', 'Excel / Google Sheets', 'CRM', 'Bulk deals'],
+        skills: ['Channel sales', 'B2B / corporate sales', 'Retail sales', 'Negotiation & closing', 'English & Hindi', 'MS Office / Google Sheets'],
         requirements: [
-            '3+ years in sales, preferably B2B',
-            'A record of hitting your targets',
+            '3+ years in sales, preferably B2B or channel sales',
+            'A record of performing against targets',
             'Good spoken and written English and Hindi',
-            'Comfortable talking price and closing deals with business buyers',
-            'Comfortable with Excel or Google Sheets and a basic CRM',
-            'Self-driven and organised; you follow up without being chased',
+            'Comfortable with MS Office or Google Sheets',
+            'Self-motivated and self-driven',
             'Any graduate. Your skills and results matter more to us than your degree',
         ],
         goodToHave: [
-            'Experience in electronics retail, or selling laptops, mobile phones, IT hardware, e-waste or recycling services',
-            'Contacts in corporate IT, procurement or admin teams',
+            'Experience selling used or refurbished laptops and mobile phones',
+            'Contacts in corporates for sales or buyback of IT equipment',
             'Experience with bulk orders or tenders',
-            'Knowing India’s E-Waste (Management) Rules or EPR compliance',
+            'Understanding of India’s E-Waste (Management) Rules or EPR compliance',
         ],
         perks: [
-            'A growing business doing something useful: cutting e-waste and giving IT equipment a longer life',
+            '5-day working week',
+            'Exposure to IT e-waste and refurbishment',
             'Hands-on experience in both enterprise buyback and bulk device sales',
         ],
-        salary: { min: 360000, max: 360000, unit: 'YEAR', note: 'tentative' },
+        salary: { min: 350000, max: 450000, unit: 'YEAR' },
         notePrompt: 'Tell us about the biggest deal you’ve closed',
         noteRequired: false,
         postedAt: '2026-11-13',
